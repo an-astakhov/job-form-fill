@@ -1,3 +1,7 @@
+import defaultApplicationAnswerBankMarkdown from "../../docs/anton-profile-package/application-answer-bank.md?raw";
+import defaultExperienceNotesMarkdown from "../../docs/anton-profile-package/experience-notes.md?raw";
+import defaultProfileJson from "../../docs/anton-profile-package/profile.json?raw";
+import defaultRoleTargetingNotesMarkdown from "../../docs/anton-profile-package/role-targeting-notes.md?raw";
 import "./style.css";
 import { fillFieldValues } from "../content/fillFields";
 import { scanPageFields } from "../content/fieldScanner";
@@ -5,6 +9,7 @@ import { requestFieldSuggestions } from "../shared/suggestionClient";
 import {
   countMeaningfulProfileFacts,
   parseProfileJson,
+  type KnowledgeDocument,
   type FieldSuggestion
 } from "../shared/suggestions";
 import {
@@ -18,76 +23,10 @@ import {
 } from "../shared/storage";
 import type { DetectedField, FillInstruction, FillResult } from "../shared/types";
 
-const defaultProfile = `{
-  "personal": {
-    "firstName": "Avery",
-    "lastName": "Hart",
-    "email": "avery.hart@example.com",
-    "phone": "+1 555 010 2468",
-    "city": "Prague",
-    "country": "Czech Republic",
-    "linkedin": "https://www.linkedin.com/in/avery-hart-example",
-    "github": "https://github.com/avery-hart-example"
-  },
-  "workAuthorization": {
-    "approvedAnswersOnly": true,
-    "answers": {
-      "visaSponsorshipRequired": "No"
-    }
-  },
-  "currentRole": {
-    "company": "Acme Robotics",
-    "title": "Machine Learning Engineer",
-    "location": "Prague, Czech Republic",
-    "startDate": "2023-04",
-    "summary": "Builds ML-powered document extraction and ranking systems for internal automation."
-  },
-  "experience": [
-    {
-      "company": "Acme Robotics",
-      "title": "Machine Learning Engineer",
-      "startDate": "2023-04",
-      "endDate": "Present",
-      "highlights": [
-        "Built Python services for document parsing and search ranking.",
-        "Shipped retrieval and classification features used by recruiters and operations teams."
-      ]
-    },
-    {
-      "company": "Northwind Data",
-      "title": "Data Scientist",
-      "startDate": "2021-01",
-      "endDate": "2023-03",
-      "highlights": [
-        "Developed forecasting and NLP pipelines.",
-        "Worked with SQL, Python, scikit-learn, and experiment tracking."
-      ]
-    }
-  ],
-  "education": [
-    {
-      "school": "Example Technical University",
-      "degree": "MSc",
-      "field": "Computer Science",
-      "graduationYear": "2020"
-    }
-  ],
-  "skills": [
-    "Python",
-    "Machine Learning",
-    "NLP",
-    "SQL",
-    "scikit-learn",
-    "Pandas",
-    "Prompt Engineering"
-  ],
-  "standardAnswers": {
-    "noticePeriod": "30 days",
-    "salaryExpectations": "Prefer to discuss later in the process.",
-    "willingToRelocate": "Open to discussion",
-    "whyInterestedGeneric": "I am interested in roles where I can apply machine learning to practical product workflows and collaborate closely with engineering teams."
-  }
-}`;
+const defaultProfile = defaultProfileJson.trim();
+const defaultExperienceNotes = defaultExperienceNotesMarkdown.trim();
+const defaultApplicationAnswerBank = defaultApplicationAnswerBankMarkdown.trim();
+const defaultRoleTargetingNotes = defaultRoleTargetingNotesMarkdown.trim();
 
 type ActiveTabContext = {
   pageLabel: string;
@@ -105,17 +44,21 @@ type LogEntry = {
 type PopupState = {
   activePageLabel: string;
   activePageStorageKey: string | null;
+  applicationAnswerBankMarkdown: string;
   apiEndpoint: string;
   apiKey: string;
   apiModel: string;
   detectedFields: DetectedField[];
+  experienceNotesMarkdown: string;
   fillResultsByFieldId: Record<string, FillResult>;
   isAutofilling: boolean;
   isInitializing: boolean;
   lastSuggestionCount: number;
   logs: LogEntry[];
+  markdownDocumentCount: number;
   profileFactCount: number;
   profileJson: string;
+  roleTargetingNotesMarkdown: string;
   statusMessage: string;
   statusTone: "neutral" | "success" | "error";
   storageMessage: string;
@@ -134,17 +77,21 @@ const app = appRoot;
 const state: PopupState = {
   activePageLabel: "Current page",
   activePageStorageKey: null,
+  applicationAnswerBankMarkdown: defaultApplicationAnswerBank,
   apiEndpoint: "",
   apiKey: "",
   apiModel: "",
   detectedFields: [],
+  experienceNotesMarkdown: defaultExperienceNotes,
   fillResultsByFieldId: {},
   isAutofilling: false,
   isInitializing: true,
   lastSuggestionCount: 0,
   logs: [],
+  markdownDocumentCount: 3,
   profileFactCount: 0,
   profileJson: defaultProfile,
+  roleTargetingNotesMarkdown: defaultRoleTargetingNotes,
   statusMessage: "Ready to autofill the active tab.",
   statusTone: "neutral",
   storageMessage: "Loading saved local settings...",
@@ -157,10 +104,13 @@ let settingsSaveTimeoutId: number | null = null;
 
 function getCurrentSettings(): StoredPopupSettings {
   return {
+    applicationAnswerBankMarkdown: state.applicationAnswerBankMarkdown,
     apiEndpoint: state.apiEndpoint,
     apiKey: state.apiKey,
     apiModel: state.apiModel,
-    profileJson: state.profileJson
+    experienceNotesMarkdown: state.experienceNotesMarkdown,
+    profileJson: state.profileJson,
+    roleTargetingNotesMarkdown: state.roleTargetingNotesMarkdown
   };
 }
 
@@ -203,6 +153,29 @@ function updateProfileFactCount(): void {
   } catch {
     state.profileFactCount = 0;
   }
+
+  state.markdownDocumentCount = getKnowledgeDocuments().length;
+}
+
+function getKnowledgeDocuments(): KnowledgeDocument[] {
+  const documents: Array<KnowledgeDocument | null> = [
+    {
+      title: "Experience Notes",
+      content: state.experienceNotesMarkdown.trim()
+    },
+    {
+      title: "Application Answer Bank",
+      content: state.applicationAnswerBankMarkdown.trim()
+    },
+    {
+      title: "Role Targeting Notes",
+      content: state.roleTargetingNotesMarkdown.trim()
+    }
+  ];
+
+  return documents.filter((document): document is KnowledgeDocument => {
+    return Boolean(document?.content);
+  });
 }
 
 function getFieldDisplayLabel(field: DetectedField): string {
@@ -443,6 +416,10 @@ function renderDiagnosticsPanel(): string {
           <strong>Filled</strong>
           <span>${getFilledSuccessCount()}</span>
         </div>
+        <div class="diagnostic-card">
+          <strong>Notes</strong>
+          <span>${state.markdownDocumentCount}</span>
+        </div>
       </div>
 
       <ul class="log-list">${logItems}</ul>
@@ -549,21 +526,55 @@ function render(): void {
           <textarea
             name="profileJson"
             spellcheck="false"
-            rows="16"
+            rows="14"
             ${state.isInitializing ? "disabled" : ""}
           >${escapeHtml(state.profileJson)}</textarea>
+        </label>
+
+        <label class="field">
+          <span>Experience notes (Markdown)</span>
+          <textarea
+            name="experienceNotesMarkdown"
+            spellcheck="false"
+            rows="10"
+            ${state.isInitializing ? "disabled" : ""}
+          >${escapeHtml(state.experienceNotesMarkdown)}</textarea>
+        </label>
+
+        <label class="field">
+          <span>Application answer bank (Markdown)</span>
+          <textarea
+            name="applicationAnswerBankMarkdown"
+            spellcheck="false"
+            rows="8"
+            ${state.isInitializing ? "disabled" : ""}
+          >${escapeHtml(state.applicationAnswerBankMarkdown)}</textarea>
+        </label>
+
+        <label class="field">
+          <span>Role targeting notes (Markdown)</span>
+          <textarea
+            name="roleTargetingNotesMarkdown"
+            spellcheck="false"
+            rows="8"
+            ${state.isInitializing ? "disabled" : ""}
+          >${escapeHtml(state.roleTargetingNotesMarkdown)}</textarea>
         </label>
 
         <div class="settings-actions">
           <button
             type="button"
             class="secondary-action"
-            data-action="load-fake-profile"
+            data-action="load-bundled-package"
             ${state.isInitializing ? "disabled" : ""}
           >
-            Load fake test profile
+            Load bundled package
           </button>
         </div>
+
+        <p class="panel-note">
+          Markdown notes are now sent as extra stable context for ordinary inference such as years of experience, project evidence, and reusable short answers.
+        </p>
       </section>
     </main>
   `;
@@ -573,13 +584,16 @@ function render(): void {
     void handleAutofill();
   });
 
-  const loadFakeProfileButton = app.querySelector<HTMLButtonElement>(
-    "[data-action='load-fake-profile']"
+  const loadBundledPackageButton = app.querySelector<HTMLButtonElement>(
+    "[data-action='load-bundled-package']"
   );
-  loadFakeProfileButton?.addEventListener("click", () => {
+  loadBundledPackageButton?.addEventListener("click", () => {
     state.profileJson = defaultProfile;
+    state.experienceNotesMarkdown = defaultExperienceNotes;
+    state.applicationAnswerBankMarkdown = defaultApplicationAnswerBank;
+    state.roleTargetingNotesMarkdown = defaultRoleTargetingNotes;
     updateProfileFactCount();
-    addLog("info", "Loaded fake test profile into the editor.");
+    addLog("info", "Loaded the bundled profile package into the editor.");
     queueSettingsSave();
     render();
   });
@@ -605,6 +619,35 @@ function render(): void {
   const profileTextarea = app.querySelector<HTMLTextAreaElement>("textarea[name='profileJson']");
   profileTextarea?.addEventListener("input", (event) => {
     state.profileJson = (event.currentTarget as HTMLTextAreaElement).value;
+    updateProfileFactCount();
+    queueSettingsSave();
+  });
+
+  const experienceNotesTextarea = app.querySelector<HTMLTextAreaElement>(
+    "textarea[name='experienceNotesMarkdown']"
+  );
+  experienceNotesTextarea?.addEventListener("input", (event) => {
+    state.experienceNotesMarkdown = (event.currentTarget as HTMLTextAreaElement).value;
+    updateProfileFactCount();
+    queueSettingsSave();
+  });
+
+  const applicationAnswerBankTextarea = app.querySelector<HTMLTextAreaElement>(
+    "textarea[name='applicationAnswerBankMarkdown']"
+  );
+  applicationAnswerBankTextarea?.addEventListener("input", (event) => {
+    state.applicationAnswerBankMarkdown = (
+      event.currentTarget as HTMLTextAreaElement
+    ).value;
+    updateProfileFactCount();
+    queueSettingsSave();
+  });
+
+  const roleTargetingNotesTextarea = app.querySelector<HTMLTextAreaElement>(
+    "textarea[name='roleTargetingNotesMarkdown']"
+  );
+  roleTargetingNotesTextarea?.addEventListener("input", (event) => {
+    state.roleTargetingNotesMarkdown = (event.currentTarget as HTMLTextAreaElement).value;
     updateProfileFactCount();
     queueSettingsSave();
   });
@@ -708,10 +751,13 @@ async function initializePopup(): Promise<void> {
       getActiveTabContext()
     ]);
 
+    state.applicationAnswerBankMarkdown = settings.applicationAnswerBankMarkdown;
     state.apiEndpoint = settings.apiEndpoint;
     state.apiKey = settings.apiKey;
     state.apiModel = settings.apiModel;
+    state.experienceNotesMarkdown = settings.experienceNotesMarkdown;
     state.profileJson = settings.profileJson;
+    state.roleTargetingNotesMarkdown = settings.roleTargetingNotesMarkdown;
     state.activePageLabel = activeTabContext.pageLabel;
     state.activePageStorageKey = activeTabContext.storageKey;
     updateProfileFactCount();
@@ -783,7 +829,10 @@ async function handleAutofill(): Promise<void> {
   state.isAutofilling = true;
   state.statusMessage = "Scanning page, requesting suggestions, and filling supported fields...";
   state.statusTone = "neutral";
-  addLog("info", `Starting autofill with ${state.profileFactCount} profile facts.`);
+  addLog(
+    "info",
+    `Starting autofill with ${state.profileFactCount} profile facts and ${state.markdownDocumentCount} Markdown note set(s).`
+  );
   render();
 
   try {
@@ -815,6 +864,7 @@ async function handleAutofill(): Promise<void> {
       apiKey: state.apiKey.trim(),
       apiModel: state.apiModel.trim(),
       detectedFields: state.detectedFields,
+      knowledgeDocuments: getKnowledgeDocuments(),
       profileJson: state.profileJson
     });
 

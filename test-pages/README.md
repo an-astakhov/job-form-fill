@@ -30,21 +30,13 @@ http://127.0.0.1:4173/test-pages/job-application-test.html
 2. Enter API endpoint, model, key, and profile JSON.
    For OpenAI, use `https://api.openai.com/v1/responses`.
 3. Click `Autofill page`.
-4. Confirm the popup detects:
-   - first name
-   - last name
-   - email
-   - phone
-   - current employer
-   - current title
-   - LinkedIn URL
-   - years of Python experience
-   - machine learning experience textarea
-   - country select
-   - willing to relocate select
-   - expected salary
-   - visa sponsorship
-   - short cover note contenteditable field
+4. Confirm the popup detects a wide range of controls, including:
+   - direct profile fields such as name, email, phone, city, country, LinkedIn, GitHub, and website
+   - inference-heavy fields such as years of Python, SQL, machine learning, credit risk, and climate risk experience
+   - standard reusable answers such as relocation and preferred work mode
+   - open-text prompts such as why this role, why this company, and project summaries
+   - awkward label patterns such as wrapped labels, `aria-labelledby`, placeholder-only text, and contenteditable textboxes
+   - manual-only or sensitive fields such as salary, visa sponsorship, disability status, and veteran status
 5. Confirm suggestions render with:
    - proposed value
    - confidence
@@ -55,10 +47,11 @@ http://127.0.0.1:4173/test-pages/job-application-test.html
    - text inputs populate
    - textarea populates
    - native selects choose the expected option
-   - unsupported/manual fields remain for manual handling
+   - awkward or unsafe fields remain for manual handling where appropriate
+   - hidden, password, file, disabled, and readonly inputs are ignored or not filled
    - the form is never submitted
 
 ## Notes
 
 - If you test through `file://`, Chrome may require enabling extension access to file URLs in the extension details page.
-- The contenteditable `Short cover note` field is included to exercise `role="textbox"` detection and fill behavior.
+- The page now includes intentionally annoying ATS-like cases to help evaluate scanner quality, ordinary inference quality, and unsupported/manual handling.

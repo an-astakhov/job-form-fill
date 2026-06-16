@@ -24,7 +24,7 @@
       }
 
       main {
-        max-width: 880px;
+        max-width: 980px;
         margin: 0 auto;
         padding: 40px 20px 56px;
       }
@@ -58,7 +58,7 @@
 
       .hero p {
         margin: 12px 0 0;
-        max-width: 64ch;
+        max-width: 68ch;
         color: #485a6e;
       }
 
@@ -67,7 +67,7 @@
       }
 
       .section + .section {
-        margin-top: 24px;
+        margin-top: 28px;
       }
 
       .section h2 {
@@ -79,6 +79,10 @@
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 16px;
+      }
+
+      .grid.three-up {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
       }
 
       .field {
@@ -114,6 +118,53 @@
         resize: vertical;
       }
 
+      fieldset {
+        margin: 0;
+        padding: 0;
+        border: 0;
+      }
+
+      legend {
+        padding: 0;
+        margin-bottom: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #20384f;
+      }
+
+      .choice-group {
+        display: grid;
+        gap: 10px;
+        padding: 12px;
+        border: 1px solid rgba(18, 32, 51, 0.14);
+        border-radius: 12px;
+        background: #ffffff;
+      }
+
+      .choice-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+
+      .choice-row label,
+      .choice-stack label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 500;
+      }
+
+      .choice-row input,
+      .choice-stack input {
+        width: auto;
+      }
+
+      .choice-stack {
+        display: grid;
+        gap: 10px;
+      }
+
       .hint {
         font-size: 12px;
         color: #5b6b7c;
@@ -127,14 +178,24 @@
         background: #ffffff;
       }
 
+      .divider {
+        margin: 26px 0 8px;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #7d5a29;
+      }
+
       .footer-note {
         margin-top: 18px;
         font-size: 13px;
         color: #5b6b7c;
       }
 
-      @media (max-width: 700px) {
-        .grid {
+      @media (max-width: 760px) {
+        .grid,
+        .grid.three-up {
           grid-template-columns: 1fr;
         }
       }
@@ -146,23 +207,36 @@
         <p class="eyebrow">Local Validation Page</p>
         <h1>Job Application Test Form</h1>
         <p>
-          This page exists to validate one-step scan, suggestion, and fill
-          behavior for the extension MVP. It does not submit anywhere.
+          This page exists to validate one-step scan, suggestion, and fill behavior
+          for the extension MVP. It intentionally includes a wider and more annoying
+          set of fields resembling real ATS forms. It does not submit anywhere.
         </p>
       </section>
 
       <form class="card" aria-label="Job application test form">
         <section class="section" aria-labelledby="personal-heading">
           <h2 id="personal-heading">Personal information</h2>
-          <div class="grid">
+          <div class="grid three-up">
             <div class="field">
               <label for="first-name">First name</label>
               <input id="first-name" name="firstName" type="text" autocomplete="given-name" />
             </div>
 
             <div class="field">
+              <label for="middle-name">Middle name</label>
+              <input id="middle-name" name="middleName" type="text" />
+            </div>
+
+            <div class="field">
               <label for="last-name">Last name</label>
               <input id="last-name" name="lastName" type="text" autocomplete="family-name" />
+            </div>
+
+            <div class="field">
+              <label>
+                Preferred name
+                <input name="preferredName" type="text" />
+              </label>
             </div>
 
             <div class="field">
@@ -173,6 +247,17 @@
                 type="email"
                 autocomplete="email"
                 placeholder="name@example.com"
+              />
+            </div>
+
+            <div class="field">
+              <label for="secondary-email">Secondary email</label>
+              <input
+                id="secondary-email"
+                name="secondaryEmail"
+                type="email"
+                aria-label="Secondary email address"
+                placeholder="optional@example.com"
               />
             </div>
 
@@ -188,23 +273,107 @@
             </div>
 
             <div class="field">
+              <label for="phone-extension">Phone extension</label>
+              <input id="phone-extension" name="phoneExtension" type="text" placeholder="123" />
+            </div>
+
+            <div class="field">
+              <label for="current-city">City</label>
+              <input id="current-city" name="city" type="text" autocomplete="address-level2" />
+            </div>
+
+            <div class="field">
+              <label for="address-line-1">Street address</label>
+              <input id="address-line-1" name="addressLine1" type="text" autocomplete="street-address" />
+            </div>
+
+            <div class="field">
+              <span class="field-title">Apartment / suite</span>
+              <input name="addressLine2" type="text" placeholder="Optional second address line" />
+            </div>
+
+            <div class="field">
+              <label for="state-province">State / province</label>
+              <select id="state-province" name="stateProvince">
+                <option value="">Choose one</option>
+                <option value="capital-region">Capital Region</option>
+                <option value="central-bohemia">Central Bohemia</option>
+                <option value="hovedstaden">Hovedstaden</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="postal-code">Postal code</label>
+              <input id="postal-code" name="postalCode" type="text" autocomplete="postal-code" />
+            </div>
+
+            <div class="field">
               <label for="country-select">Country</label>
               <select id="country-select" name="country" required>
                 <option value="">Select a country</option>
                 <option value="CZ">Czech Republic</option>
+                <option value="DK">Denmark</option>
                 <option value="DE">Germany</option>
                 <option value="GB">United Kingdom</option>
                 <option value="US">United States</option>
               </select>
             </div>
+          </div>
+        </section>
+
+        <section class="section" aria-labelledby="links-heading">
+          <h2 id="links-heading">Links and online presence</h2>
+          <div class="grid three-up">
+            <div class="field">
+              <label for="linkedin-url">LinkedIn URL</label>
+              <input
+                id="linkedin-url"
+                name="linkedin"
+                type="url"
+                placeholder="https://www.linkedin.com/in/your-profile"
+              />
+            </div>
 
             <div class="field">
-              <label for="relocate-select">Willing to relocate</label>
-              <select id="relocate-select" name="willingToRelocate">
+              <label for="github-url">GitHub URL</label>
+              <input
+                id="github-url"
+                name="github"
+                type="url"
+                placeholder="https://github.com/your-handle"
+              />
+            </div>
+
+            <div class="field">
+              <label for="website-url">Personal website</label>
+              <input
+                id="website-url"
+                name="website"
+                type="url"
+                placeholder="https://your-site.example"
+              />
+            </div>
+
+            <div class="field">
+              <label for="portfolio-url">Portfolio URL</label>
+              <input id="portfolio-url" name="portfolioUrl" type="url" />
+            </div>
+
+            <div class="field">
+              <label for="scholar-url">Google Scholar URL</label>
+              <input id="scholar-url" name="scholarUrl" type="url" />
+            </div>
+
+            <div class="field">
+              <label for="referral-source">How did you hear about us?</label>
+              <select id="referral-source" name="referralSource">
                 <option value="">Choose one</option>
-                <option value="yes">Yes</option>
-                <option value="no">No</option>
-                <option value="discuss">Open to discussion</option>
+                <option value="linkedin">LinkedIn</option>
+                <option value="employee">Employee referral</option>
+                <option value="recruiter">Recruiter outreach</option>
+                <option value="web">Company website</option>
+                <option value="other">Other</option>
               </select>
             </div>
           </div>
@@ -212,7 +381,7 @@
 
         <section class="section" aria-labelledby="experience-heading">
           <h2 id="experience-heading">Current experience</h2>
-          <div class="grid">
+          <div class="grid three-up">
             <div class="field">
               <label for="current-employer">Current employer</label>
               <input id="current-employer" name="currentEmployer" type="text" />
@@ -224,13 +393,13 @@
             </div>
 
             <div class="field">
-              <label for="linkedin-url">LinkedIn URL</label>
-              <input
-                id="linkedin-url"
-                name="linkedin"
-                type="url"
-                placeholder="https://www.linkedin.com/in/your-profile"
-              />
+              <label for="current-company-website">Current company website</label>
+              <input id="current-company-website" name="currentCompanyWebsite" type="url" />
+            </div>
+
+            <div class="field">
+              <label for="years-total">Years of total professional experience</label>
+              <input id="years-total" name="yearsTotalExperience" type="number" min="0" step="1" />
             </div>
 
             <div class="field">
@@ -245,6 +414,41 @@
               />
             </div>
 
+            <div class="field">
+              <label for="sql-years">Years of SQL experience</label>
+              <input id="sql-years" name="sqlExperienceYears" type="number" min="0" step="1" />
+            </div>
+
+            <div class="field">
+              <label for="ml-years">Years of machine learning experience</label>
+              <input id="ml-years" name="machineLearningExperienceYears" type="number" min="0" step="1" />
+            </div>
+
+            <div class="field">
+              <label for="leadership-years">Years of leadership experience</label>
+              <input id="leadership-years" name="leadershipExperienceYears" type="number" min="0" step="1" />
+            </div>
+
+            <div class="field">
+              <label for="desired-title">Desired job title</label>
+              <input id="desired-title" name="desiredJobTitle" type="text" />
+            </div>
+
+            <div class="field">
+              <label for="notice-period">Notice period</label>
+              <input id="notice-period" name="noticePeriod" type="text" placeholder="e.g. 1 month" />
+            </div>
+
+            <div class="field">
+              <label for="available-start-date">Available start date</label>
+              <input id="available-start-date" name="availableStartDate" type="date" />
+            </div>
+
+            <div class="field">
+              <label for="current-location">Current work location</label>
+              <input id="current-location" name="currentLocation" type="text" />
+            </div>
+
             <div class="field full">
               <label for="ml-experience">Describe your machine learning experience</label>
               <textarea
@@ -253,12 +457,86 @@
                 placeholder="Keep this to a short paragraph for testing."
               ></textarea>
             </div>
+
+            <div class="field full">
+              <label for="quant-experience">Describe your quantitative / risk-modeling experience</label>
+              <textarea
+                id="quant-experience"
+                name="quantitativeExperience"
+                placeholder="Use this to test richer open-text autofill."
+              ></textarea>
+            </div>
           </div>
         </section>
 
-        <section class="section" aria-labelledby="manual-heading">
-          <h2 id="manual-heading">Manual-only examples</h2>
-          <div class="grid">
+        <section class="section" aria-labelledby="workday-heading">
+          <h2 id="workday-heading">Awkward ATS-style screening fields</h2>
+
+          <div class="divider">Standard selects</div>
+          <div class="grid three-up">
+            <div class="field">
+              <label for="relocate-select">Willing to relocate</label>
+              <select id="relocate-select" name="willingToRelocate">
+                <option value="">Choose one</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+                <option value="discuss">Open to discussion</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="work-mode">Preferred work mode</label>
+              <select id="work-mode" name="preferredWorkMode">
+                <option value="">Choose one</option>
+                <option value="remote">Remote</option>
+                <option value="hybrid">Hybrid</option>
+                <option value="onsite">On-site</option>
+                <option value="flexible">Flexible</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="highest-degree">Highest completed degree</label>
+              <select id="highest-degree" name="highestDegree">
+                <option value="">Choose one</option>
+                <option value="bachelors">Bachelor's degree</option>
+                <option value="masters">Master's degree</option>
+                <option value="phd">PhD</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="authorized-work">Are you authorized to work in this country?</label>
+              <select id="authorized-work" name="authorizedToWorkInCountry">
+                <option value="">Choose one</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="visa-sponsorship">Do you require visa sponsorship?</label>
+              <select id="visa-sponsorship" name="visaSponsorshipRequired">
+                <option value="">Choose one</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+              </select>
+              <div class="hint">This should only be answered from exact approved profile data.</div>
+            </div>
+
+            <div class="field">
+              <label for="future-sponsorship">Will you require future sponsorship?</label>
+              <select id="future-sponsorship" name="requiresFutureSponsorship">
+                <option value="">Choose one</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="divider">Text and number prompts that should encourage inference</div>
+          <div class="grid three-up">
             <div class="field">
               <label for="expected-salary">Expected salary</label>
               <input
@@ -271,36 +549,191 @@
             </div>
 
             <div class="field">
-              <label for="visa-sponsorship">Do you require visa sponsorship?</label>
-              <select id="visa-sponsorship" name="visaSponsorshipRequired">
-                <option value="">Choose one</option>
-                <option value="yes">Yes</option>
-                <option value="no">No</option>
-              </select>
-              <div class="hint">This should only be answered from exact approved profile data.</div>
+              <label for="python-production">Years building production Python systems</label>
+              <input id="python-production" name="pythonProductionYears" type="number" min="0" step="1" />
+            </div>
+
+            <div class="field">
+              <label for="credit-risk-years">Years of credit risk experience</label>
+              <input id="credit-risk-years" name="creditRiskYears" type="number" min="0" step="1" />
+            </div>
+
+            <div class="field">
+              <label for="climate-risk-years">Years of climate risk experience</label>
+              <input id="climate-risk-years" name="climateRiskYears" type="number" min="0" step="1" />
+            </div>
+
+            <div class="field">
+              <span class="field-title">Current annual compensation</span>
+              <input name="currentCompensation" type="text" placeholder="Manual only" />
+            </div>
+
+            <div class="field">
+              <label for="school-name">University / school name</label>
+              <input id="school-name" name="schoolName" type="text" />
+            </div>
+
+            <div class="field">
+              <label for="degree-field">Field of study</label>
+              <input id="degree-field" name="fieldOfStudy" type="text" />
+            </div>
+
+            <div class="field">
+              <label for="graduation-year">Graduation year</label>
+              <input id="graduation-year" name="graduationYear" type="number" min="1950" max="2035" />
+            </div>
+
+            <div class="field">
+              <label for="gpa-field">GPA</label>
+              <input id="gpa-field" name="gpa" type="text" placeholder="Optional / manual" />
             </div>
           </div>
-        </section>
 
-        <section class="section" aria-labelledby="extra-heading">
-          <h2 id="extra-heading">Additional scanner exercise</h2>
+          <div class="divider">Open-text and weird label patterns</div>
           <div class="grid">
             <div class="field full">
-              <div class="field-title" id="cover-letter-label">Short cover note</div>
+              <label for="why-role">Why are you interested in this role?</label>
+              <textarea id="why-role" name="whyInterestedInRole"></textarea>
+            </div>
+
+            <div class="field full">
+              <label for="why-company">Why are you interested in this company?</label>
+              <textarea id="why-company" name="whyInterestedInCompany"></textarea>
+            </div>
+
+            <div class="field full">
+              <label for="notable-project">Tell us about a relevant project</label>
+              <textarea id="notable-project" name="relevantProjectSummary"></textarea>
+            </div>
+
+            <div class="field">
+              <span class="field-title" id="custom-summary-label">Short cover note</span>
               <div
                 class="contenteditable-box"
                 role="textbox"
                 contenteditable="true"
-                aria-labelledby="cover-letter-label"
+                aria-labelledby="custom-summary-label"
                 data-testid="cover-note"
               ></div>
-              <div class="hint">This field is included to exercise `role="textbox"` detection.</div>
+              <div class="hint">Exercises `role="textbox"` detection and fill behavior.</div>
+            </div>
+
+            <div class="field">
+              <div class="field-title">What should we call you in interviews?</div>
+              <input name="interviewName" type="text" placeholder="No explicit label element here" />
+            </div>
+
+            <div class="field">
+              <div id="workday-al-label" class="field-title">Current employer (aria-labelledby)</div>
+              <input name="currentEmployerAria" type="text" aria-labelledby="workday-al-label" />
+            </div>
+
+            <div class="field">
+              <label for="custom-combobox">Primary skill area</label>
+              <input
+                id="custom-combobox"
+                name="primarySkillArea"
+                type="text"
+                role="combobox"
+                aria-expanded="false"
+                placeholder="Custom combobox-like field"
+              />
+              <div class="hint">Useful for testing whether odd custom controls are left for manual handling.</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" aria-labelledby="screening-heading">
+          <h2 id="screening-heading">Screening, compliance, and manual-only examples</h2>
+          <div class="grid">
+            <div class="field">
+              <fieldset>
+                <legend>Are you willing to work from the office at least 3 days per week?</legend>
+                <div class="choice-group">
+                  <div class="choice-row">
+                    <label><input name="officeAttendance" type="radio" value="yes" /> Yes</label>
+                    <label><input name="officeAttendance" type="radio" value="no" /> No</label>
+                    <label><input name="officeAttendance" type="radio" value="discuss" /> Open to discussion</label>
+                  </div>
+                </div>
+              </fieldset>
+            </div>
+
+            <div class="field">
+              <fieldset>
+                <legend>Select all locations where you could work</legend>
+                <div class="choice-group choice-stack">
+                  <label><input type="checkbox" name="eligibleLocationPrague" /> Prague</label>
+                  <label><input type="checkbox" name="eligibleLocationCopenhagen" /> Copenhagen</label>
+                  <label><input type="checkbox" name="eligibleLocationRemote" /> Remote within EU</label>
+                </div>
+              </fieldset>
+            </div>
+
+            <div class="field">
+              <label for="gender-identity">Gender identity</label>
+              <select id="gender-identity" name="genderIdentity">
+                <option value="">Prefer not to say</option>
+                <option value="woman">Woman</option>
+                <option value="man">Man</option>
+                <option value="nonbinary">Non-binary</option>
+                <option value="selfdescribe">Prefer to self-describe</option>
+              </select>
+              <div class="hint">Sensitive field, typically unsupported.</div>
+            </div>
+
+            <div class="field">
+              <label for="disability-status">Disability status</label>
+              <select id="disability-status" name="disabilityStatus">
+                <option value="">Prefer not to answer</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="veteran-status">Veteran status</label>
+              <select id="veteran-status" name="veteranStatus">
+                <option value="">Prefer not to answer</option>
+                <option value="protected">Protected veteran</option>
+                <option value="not-protected">Not a protected veteran</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="pronouns">Pronouns</label>
+              <input id="pronouns" name="pronouns" type="text" placeholder="Optional / personal preference" />
+            </div>
+
+            <div class="field full">
+              <fieldset>
+                <legend>Acknowledgements</legend>
+                <div class="choice-group choice-stack">
+                  <label><input type="checkbox" name="privacyPolicyAccepted" /> I have read the privacy policy.</label>
+                  <label><input type="checkbox" name="candidateDataConsent" /> I consent to storing my candidate data.</label>
+                  <label><input type="checkbox" name="marketingEmailsOptIn" /> I want to receive future job alerts.</label>
+                </div>
+              </fieldset>
+            </div>
+
+            <div class="field full">
+              <div class="hint">
+                The fields below should usually be ignored by the scanner or treated as non-fillable:
+                hidden input, password input, file upload, disabled input, and readonly input.
+              </div>
+              <input name="hiddenInternalTracking" type="hidden" value="internal-only" />
+              <input name="passwordShouldBeIgnored" type="password" value="secret" />
+              <input name="resumeUpload" type="file" />
+              <input name="disabledField" type="text" value="Should be ignored" disabled />
+              <input name="readonlyField" type="text" value="Should be ignored" readonly />
             </div>
           </div>
         </section>
 
         <p class="footer-note">
-          There is intentionally no submit button with live behavior. The extension should fill values only and never submit the form.
+          There is intentionally no working submit behavior. This page is meant to
+          stress the scanner and autofill logic across many common ATS-style fields
+          without ever submitting anything.
         </p>
       </form>
     </main>

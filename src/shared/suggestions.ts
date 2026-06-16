@@ -1,5 +1,10 @@
 import type { DetectedField } from "./types";
 
+export type KnowledgeDocument = {
+  content: string;
+  title: string;
+};
+
 export type FieldSuggestion = {
   internalId: string;
   proposedValue: string | null;
@@ -59,13 +64,15 @@ export const FIELD_SUGGESTION_RESPONSE_SCHEMA = {
 
 export const SUGGESTION_SYSTEM_PROMPT = `You are an autofill assistant for a personal job application helper.
 You map detected web form fields to a supplied user profile.
-Use only the supplied profile facts.
+You will receive stable context containing structured profile JSON and optional Markdown knowledge notes.
+Use only the supplied profile facts and Markdown notes.
 Never invent facts.
 Treat unsupported as a last resort for ordinary non-sensitive fields.
 For ordinary non-sensitive fields, you may provide a best-effort proposal with low confidence when the profile strongly suggests a likely answer.
+Use Markdown knowledge notes to infer ordinary non-sensitive answers such as years of experience, skill depth, project evidence, and reusable narrative summaries.
 For ordinary experience questions such as years using Python, SQL, machine learning, or similar skills, infer a reasonable estimate from dated work history, role summaries, project bullets, and skills evidence when possible.
 If the field asks for years of experience and the evidence supports an estimate, return a concise numeric answer such as "5".
-Never answer sensitive, legal, immigration, demographic, disability, salary, notice-period, or work-authorization questions unless an exact approved answer is present in the profile.
+Never answer sensitive, legal, immigration, demographic, disability, salary, notice-period, or work-authorization questions unless an exact approved answer is present in the structured profile JSON.
 Prefer concise answers.
 Do not submit anything.
 Return strict JSON only in the shape {"suggestions":[...]}.`;
@@ -98,24 +105,25 @@ export function countMeaningfulProfileFacts(value: unknown): number {
 
 export function buildSuggestionUserPayload(
   fields: DetectedField[],
-  profile: unknown
+  knowledgeDocuments: KnowledgeDocument[]
 ): string {
   return JSON.stringify(
     {
       task: "Suggest autofill values for the detected job application fields.",
       rules: [
         "Return one suggestion for every detected field.",
-        "Use only profile facts supplied in this request.",
+        "Use only the structured profile and Markdown knowledge notes supplied in this request.",
         "If a field is unsupported, set proposedValue to null and unsupported to true.",
         "Do not invent dates, companies, degrees, addresses, legal statuses, salary expectations, or work authorization answers.",
-        "Only answer sensitive or legal questions when the exact approved answer exists in the profile.",
+        "Only answer sensitive or legal questions when the exact approved answer exists in the structured profile JSON.",
         "Treat unsupported as a last resort for ordinary non-sensitive fields when the profile contains enough evidence for a reasonable guess.",
+        "Use Markdown knowledge notes for ordinary inference, project evidence, skill depth, and reusable narrative answers.",
         "For ordinary non-sensitive fields, if the profile reasonably implies a likely answer, you may propose it with low confidence and explain the inference in the reason.",
         "For ordinary years-of-experience questions, estimate from dated roles and relevant skill evidence when the profile supports a reasonable guess, and prefer a short numeric string.",
         "Set manualFillRequired to true for controls that are not safe to autofill.",
         "Return one JSON object that matches the required schema exactly."
       ],
-      profile,
+      availableKnowledgeSources: knowledgeDocuments.map((document) => document.title),
       fields
     },
     null,

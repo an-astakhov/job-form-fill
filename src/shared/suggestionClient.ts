@@ -2,6 +2,7 @@ import type { DetectedField } from "./types";
 import {
   buildSuggestionUserPayload,
   FIELD_SUGGESTION_RESPONSE_SCHEMA,
+  type KnowledgeDocument,
   normalizeSuggestionEnvelope,
   parseProfileJson,
   SUGGESTION_SYSTEM_PROMPT,
@@ -13,6 +14,7 @@ type SuggestionRequest = {
   apiKey: string;
   apiModel: string;
   detectedFields: DetectedField[];
+  knowledgeDocuments: KnowledgeDocument[];
   profileJson: string;
 };
 
@@ -54,10 +56,14 @@ function isOpenAiResponsesEndpoint(url: string): boolean {
   }
 }
 
-function buildProfileContextPayload(profile: unknown): string {
+function buildStableContextPayload(
+  profile: unknown,
+  knowledgeDocuments: KnowledgeDocument[]
+): string {
   return JSON.stringify(
     {
-      contextType: "profile",
+      contextType: "autofill_profile_bundle",
+      knowledgeDocuments,
       profile
     },
     null,
@@ -92,6 +98,10 @@ export async function requestFieldSuggestions(
   request: SuggestionRequest
 ): Promise<SuggestionRequestResult> {
   const profile = parseProfileJson(request.profileJson);
+  const stableContextPayload = buildStableContextPayload(
+    profile,
+    request.knowledgeDocuments
+  );
   const requestBody: Record<string, unknown> = {
     model: request.apiModel,
     store: false,
@@ -106,18 +116,21 @@ export async function requestFieldSuggestions(
     input: [
       {
         role: "developer",
-        content: `Use this profile as stable context.\n${buildProfileContextPayload(profile)}`
+        content: `Use this structured profile and Markdown notes as stable context.\n${stableContextPayload}`
       },
       {
         role: "user",
-        content: buildSuggestionUserPayload(request.detectedFields, profile)
+        content: buildSuggestionUserPayload(
+          request.detectedFields,
+          request.knowledgeDocuments
+        )
       }
     ]
   };
 
   if (isOpenAiResponsesEndpoint(request.apiEndpoint)) {
     requestBody.prompt_cache_key = `job-form-fill:${request.apiModel}:${hashString(
-      request.profileJson
+      stableContextPayload
     )}`;
     requestBody.prompt_cache_retention = "24h";
   }

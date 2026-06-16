@@ -60,8 +60,8 @@ There are two different caching layers to think about:
 ## Suggested next evolution
 
 1. Keep the current structured profile for direct autofill.
-2. Add support for attaching one or more local Markdown notes as optional knowledge sources.
-3. Summarize or retrieve only relevant passages from those Markdown files before the suggestion request.
+2. Use Markdown notes as optional knowledge sources for broader inference.
+3. Summarize or retrieve only relevant passages from those Markdown files before the suggestion request once the notes become larger.
 4. Eventually replace raw JSON editing with:
    - a basic profile form for common fields
    - a notes/documents area for Markdown knowledge
@@ -77,3 +77,10 @@ The most practical product direction is:
 - structured profile for direct answers
 - Markdown for richer context
 - retrieval or summarization for larger supporting material
+
+## Current status in this repo
+
+- Structured JSON is used for direct field mapping and exact sensitive answers.
+- Markdown notes are now sent alongside the JSON as stable context for the suggestion request.
+- OpenAI Responses prompt caching now covers both the JSON profile and the Markdown note bundle.
+- The next likely improvement is selective retrieval so only the most relevant Markdown snippets are sent for each page.

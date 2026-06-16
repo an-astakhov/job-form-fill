@@ -1,0 +1,166 @@
+{
+  "personal": {
+    "firstName": "Anton",
+    "lastName": "Astakhov",
+    "email": "av.astakhov@gmail.com",
+    "phone": "+45 71 57 75 74",
+    "city": "Prague",
+    "country": "Czech Republic",
+    "linkedin": "https://www.linkedin.com/in/antonastakhov/",
+    "github": "",
+    "website": ""
+  },
+  "workAuthorization": {
+    "approvedAnswersOnly": true,
+    "answers": {
+      "visaSponsorshipRequired": "No",
+      "authorizedToWorkInCountry": "Yes (EU citizen)",
+      "requiresFutureSponsorship": "No"
+    }
+  },
+  "currentRole": {
+    "company": "Moody's Analytics",
+    "title": "Associate Director in Analytics & Modeling",
+    "location": "Prague, Czech Republic",
+    "startDate": "2020-04",
+    "summary": "Quantitative analytics and modeling lead working across credit risk, climate risk, predictive ML, and AI-driven decision systems, including production-grade SaaS solutions and orchestrated LLM workflows."
+  },
+  "experience": [
+    {
+      "company": "Moody's Analytics",
+      "title": "Associate Director in Analytics & Modeling",
+      "location": "Prague, Czech Republic",
+      "startDate": "2020-04",
+      "endDate": "Present",
+      "highlights": [
+        "Built an AI-native intelligence platform that turns outputs from multiple SaaS products into credit risk insights via an orchestrated LLM-agent pipeline.",
+        "Led development of predictive ML frameworks for insurance claims and firm size metrics for major banks and insurers.",
+        "Led research and implementation of new functionality for a simulation-based SaaS credit risk solution, including valuation, correlation, and impairment capabilities.",
+        "Built a firm-level climate risk framework for climate-adjusted PDs and financials deployed in a product used by 40+ clients.",
+        "Developed a portfolio-level simulation-based correlation model for geospatial physical climate risk.",
+        "Led cross-functional agile squads, supported client onboarding, mentored team members, and drove project planning and execution."
+      ],
+      "skillsUsed": [
+        "Python",
+        "R",
+        "SQL",
+        "Machine Learning",
+        "LLM Orchestration",
+        "LangFuse",
+        "MLflow",
+        "Databricks",
+        "PySpark",
+        "AWS",
+        "Docker",
+        "Git",
+        "Credit Risk",
+        "Climate Risk",
+        "IFRS 9 / ECL",
+        "Monte Carlo Simulation",
+        "Model Validation",
+        "Stakeholder Management"
+      ]
+    },
+    {
+      "company": "Deloitte",
+      "title": "Senior Associate in Valuation & Financial Modeling",
+      "location": "",
+      "startDate": "2016-07",
+      "endDate": "2020-03",
+      "highlights": [
+        "Built complex financial models for M&A, litigation, budgeting, restructuring, and public-private partnership tenders across CEE and Western Europe.",
+        "Supported valuation, transaction, and strategic decision-making across steel, transportation, energy, real estate, private equity, and financial services.",
+        "Conducted financial analysis, market research, valuation, and day-to-day client communication."
+      ],
+      "skillsUsed": [
+        "Financial Modeling",
+        "Excel",
+        "Valuation",
+        "Market Research",
+        "Client Communication",
+        "Strategic Analysis"
+      ]
+    },
+    {
+      "company": "ExxonMobil",
+      "title": "Quality Assurance Analyst",
+      "location": "",
+      "startDate": "2015-08",
+      "endDate": "2016-06",
+      "highlights": [
+        "Managed payment processing, quality assurance, and payables controls.",
+        "Collaborated daily with teams in Czechia, Canada, and Thailand.",
+        "Led process improvement and automation initiatives."
+      ],
+      "skillsUsed": [
+        "Quality Assurance",
+        "Process Improvement",
+        "Automation",
+        "Cross-Functional Collaboration"
+      ]
+    }
+  ],
+  "education": [
+    {
+      "school": "Charles University",
+      "degree": "MSc",
+      "field": "Economics and Finance",
+      "graduationYear": "2015"
+    },
+    {
+      "school": "University of Zurich",
+      "degree": "Erasmus exchange studies",
+      "field": "Economics and Finance",
+      "graduationYear": "2014"
+    },
+    {
+      "school": "Donbas State Engineering Academy",
+      "degree": "BA",
+      "field": "Finance and Banking",
+      "graduationYear": "2012"
+    }
+  ],
+  "skills": [
+    "Python",
+    "R",
+    "SQL",
+    "pandas",
+    "scikit-learn",
+    "XGBoost",
+    "LightGBM",
+    "MLflow",
+    "Databricks",
+    "PySpark",
+    "LangFuse",
+    "Claude Code",
+    "Codex",
+    "GitHub Copilot",
+    "Cursor",
+    "AWS",
+    "Redshift",
+    "Docker",
+    "Git",
+    "Excel",
+    "Power BI",
+    "Credit Risk",
+    "Climate Risk",
+    "IFRS 9 / ECL",
+    "Stress Testing",
+    "Monte Carlo Simulation",
+    "Factor Models",
+    "Copulas",
+    "Model Validation",
+    "Predictive Machine Learning",
+    "LLM Orchestration",
+    "Agentic AI",
+    "Stakeholder Management",
+    "Financial Modeling"
+  ],
+  "standardAnswers": {
+    "noticePeriod": "",
+    "salaryExpectations": "",
+    "willingToRelocate": "Yes. I am currently based in Prague, Czech Republic, and will be relocating to Copenhagen in August 2026 on a permanent basis.",
+    "whyInterestedGeneric": "I am most interested in roles that combine quantitative depth, hands-on implementation, and direct decision impact. The strongest fit for me is work where I can build models or analytics end to end, collaborate closely with technical and business stakeholders, and improve real decisions in areas such as risk, climate, machine learning, or applied AI.",
+    "preferredWorkMode": "Flexible or hybrid setup preferred."
+  }
+}

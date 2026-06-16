@@ -2,10 +2,13 @@ import type { FieldSuggestion } from "./suggestions";
 import type { DetectedField, FillResult } from "./types";
 
 export type StoredPopupSettings = {
+  applicationAnswerBankMarkdown: string;
   apiEndpoint: string;
   apiKey: string;
   apiModel: string;
+  experienceNotesMarkdown: string;
   profileJson: string;
+  roleTargetingNotesMarkdown: string;
 };
 
 export type StoredPageState = {
@@ -42,12 +45,24 @@ export async function loadPopupSettings(
   }
 
   return {
+    applicationAnswerBankMarkdown:
+      typeof raw.applicationAnswerBankMarkdown === "string"
+        ? raw.applicationAnswerBankMarkdown
+        : defaults.applicationAnswerBankMarkdown,
     apiEndpoint:
       typeof raw.apiEndpoint === "string" ? raw.apiEndpoint : defaults.apiEndpoint,
     apiKey: typeof raw.apiKey === "string" ? raw.apiKey : defaults.apiKey,
     apiModel: typeof raw.apiModel === "string" ? raw.apiModel : defaults.apiModel,
+    experienceNotesMarkdown:
+      typeof raw.experienceNotesMarkdown === "string"
+        ? raw.experienceNotesMarkdown
+        : defaults.experienceNotesMarkdown,
     profileJson:
-      typeof raw.profileJson === "string" ? raw.profileJson : defaults.profileJson
+      typeof raw.profileJson === "string" ? raw.profileJson : defaults.profileJson,
+    roleTargetingNotesMarkdown:
+      typeof raw.roleTargetingNotesMarkdown === "string"
+        ? raw.roleTargetingNotesMarkdown
+        : defaults.roleTargetingNotesMarkdown
   };
 }
 

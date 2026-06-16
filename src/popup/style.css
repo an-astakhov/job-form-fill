@@ -28,6 +28,11 @@ button {
   cursor: pointer;
 }
 
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
 textarea {
   resize: vertical;
 }
@@ -106,6 +111,28 @@ textarea {
   gap: 10px;
 }
 
+.status-banner {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+}
+
+.status-neutral {
+  background: #edf4fb;
+  color: #20496b;
+}
+
+.status-success {
+  background: #e4f0db;
+  color: #2e5d19;
+}
+
+.status-error {
+  background: #fbe5e5;
+  color: #8a2d2d;
+}
+
 .primary-action,
 .secondary-action {
   border: 0;
@@ -143,6 +170,74 @@ textarea {
 
 .empty-state p + p {
   margin-top: 8px;
+}
+
+.field-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.field-card {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(16, 32, 51, 0.1);
+  background: rgba(250, 251, 252, 0.96);
+}
+
+.field-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.field-card-header h3 {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.field-type-chip {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #edf2f7;
+  color: #2b465d;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.field-meta {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: #617386;
+}
+
+.field-details {
+  margin: 10px 0 0;
+  display: grid;
+  gap: 8px;
+}
+
+.field-details div {
+  display: grid;
+  gap: 2px;
+}
+
+.field-details dt {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #637486;
+}
+
+.field-details dd {
+  margin: 0;
+  font-size: 13px;
+  color: #1a3147;
+  word-break: break-word;
 }
 
 .panel-note {

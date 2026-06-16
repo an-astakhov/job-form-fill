@@ -315,6 +315,19 @@ Use this page to validate scanning, suggestions, approval, and filling.
 9. Test page.
 10. Basic error handling and logging.
 
+## Progress
+
+- [x] Step 1. Manifest and popup skeleton.
+- [x] Step 2. Content script field scanner.
+- [x] Step 3. Display detected fields in popup.
+- [ ] Step 4. Local profile storage.
+- [ ] Step 5. API settings storage.
+- [ ] Step 6. Suggestion API call.
+- [ ] Step 7. Suggestion rendering and approval checkboxes.
+- [ ] Step 8. Fill approved fields.
+- [ ] Step 9. Test page.
+- [ ] Step 10. Basic error handling and logging.
+
 ## Step 1 Scope
 
 Step 1 is complete when the repo contains:

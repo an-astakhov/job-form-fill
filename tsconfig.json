@@ -9,8 +9,8 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "lib": ["DOM", "DOM.Iterable", "ES2022"],
-    "types": ["chrome"]
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "types": ["chrome", "node"]
   },
   "include": ["src/**/*.ts", "vite.config.ts"]
 }

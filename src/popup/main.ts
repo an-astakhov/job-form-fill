@@ -1,4 +1,6 @@
 import "./style.css";
+import { scanPageFields } from "../content/fieldScanner";
+import type { DetectedField } from "../shared/types";
 
 const defaultProfile = `{
   "personal": {
@@ -33,46 +35,58 @@ const defaultProfile = `{
   }
 }`;
 
-const app = document.querySelector<HTMLDivElement>("#app");
+type PopupState = {
+  apiEndpoint: string;
+  apiKey: string;
+  detectedFields: DetectedField[];
+  isScanning: boolean;
+  profileJson: string;
+  statusMessage: string;
+  statusTone: "neutral" | "success" | "error";
+};
 
-if (!app) {
+const appRoot = document.querySelector<HTMLDivElement>("#app");
+
+if (!appRoot) {
   throw new Error("Popup root element was not found.");
 }
 
-app.innerHTML = `
-  <main class="popup-shell">
-    <header class="hero">
-      <p class="eyebrow">Chrome Extension MVP</p>
-      <h1>Job Form Fill</h1>
-      <p class="subtitle">
-        Review all values before filling. The extension never submits forms.
-      </p>
-    </header>
+const app = appRoot;
 
-    <section class="panel actions-panel" aria-labelledby="actions-heading">
-      <div class="panel-heading">
-        <h2 id="actions-heading">Actions</h2>
-        <span class="status-pill">Step 1 scaffold</span>
-      </div>
+const state: PopupState = {
+  apiEndpoint: "",
+  apiKey: "",
+  detectedFields: [],
+  isScanning: false,
+  profileJson: defaultProfile,
+  statusMessage: "Ready to scan the active tab.",
+  statusTone: "neutral"
+};
 
-      <div class="action-grid">
-        <button type="button" class="primary-action">Scan page</button>
-        <button type="button" class="secondary-action">Suggest values</button>
-        <button type="button" class="secondary-action">Fill approved fields</button>
-      </div>
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
 
-      <p class="panel-note">
-        Buttons are wired as placeholders for now. Scan, suggestion, and fill logic
-        will land in the next implementation steps.
-      </p>
-    </section>
+function formatFieldType(field: DetectedField): string {
+  if (field.tagName === "input" && field.inputType) {
+    return `input:${field.inputType}`;
+  }
 
-    <section class="panel" aria-labelledby="fields-heading">
-      <div class="panel-heading">
-        <h2 id="fields-heading">Detected Fields</h2>
-        <span class="muted-label">0 fields</span>
-      </div>
+  if (field.role) {
+    return `${field.tagName} (${field.role})`;
+  }
 
+  return field.tagName;
+}
+
+function renderFieldList(fields: DetectedField[]): string {
+  if (!fields.length) {
+    return `
       <div class="empty-state">
         <p>No page scan has been run yet.</p>
         <p class="panel-note">
@@ -80,40 +94,202 @@ app.innerHTML = `
           and approval controls will appear here.
         </p>
       </div>
-    </section>
+    `;
+  }
 
-    <section class="panel settings-panel" aria-labelledby="settings-heading">
-      <div class="panel-heading">
-        <h2 id="settings-heading">Settings</h2>
-        <span class="muted-label">Local only</span>
-      </div>
+  return `
+    <div class="field-list">
+      ${fields
+        .map((field) => {
+          const title = field.labelText ?? field.ariaLabel ?? field.name ?? "Unlabeled field";
+          const currentValue = field.currentValue ?? "";
+          const nearbyText = field.nearbyText
+            .filter((item) => item && item !== field.labelText)
+            .slice(0, 3);
 
-      <label class="field">
-        <span>API endpoint URL</span>
-        <input
-          type="url"
-          name="apiEndpoint"
-          placeholder="https://api.example.com/v1/chat/completions"
-        />
-      </label>
+          return `
+            <article class="field-card">
+              <div class="field-card-header">
+                <h3>${escapeHtml(title)}</h3>
+                <span class="field-type-chip">${escapeHtml(formatFieldType(field))}</span>
+              </div>
+              <p class="field-meta">
+                ${field.required ? "Required" : "Optional"} · ${escapeHtml(field.internalId)}
+              </p>
+              <dl class="field-details">
+                <div>
+                  <dt>Current</dt>
+                  <dd>${escapeHtml(currentValue || "(empty)")}</dd>
+                </div>
+                <div>
+                  <dt>Name / ID</dt>
+                  <dd>${escapeHtml(
+                    [field.name, field.id].filter(Boolean).join(" / ") || "(none)"
+                  )}</dd>
+                </div>
+                <div>
+                  <dt>Placeholder</dt>
+                  <dd>${escapeHtml(field.placeholder ?? "(none)")}</dd>
+                </div>
+                <div>
+                  <dt>Nearby text</dt>
+                  <dd>${escapeHtml(nearbyText.join(" | ") || "(none)")}</dd>
+                </div>
+              </dl>
+            </article>
+          `;
+        })
+        .join("")}
+    </div>
+  `;
+}
 
-      <label class="field">
-        <span>API key</span>
-        <input
-          type="password"
-          name="apiKey"
-          placeholder="Stored locally for MVP use"
-        />
-      </label>
+function render(): void {
+  app.innerHTML = `
+    <main class="popup-shell">
+      <header class="hero">
+        <p class="eyebrow">Chrome Extension MVP</p>
+        <h1>Job Form Fill</h1>
+        <p class="subtitle">
+          Review all values before filling. The extension never submits forms.
+        </p>
+      </header>
 
-      <label class="field">
-        <span>User profile JSON</span>
-        <textarea
-          name="profileJson"
-          spellcheck="false"
-          rows="16"
-        >${defaultProfile}</textarea>
-      </label>
-    </section>
-  </main>
-`;
+      <section class="panel actions-panel" aria-labelledby="actions-heading">
+        <div class="panel-heading">
+          <h2 id="actions-heading">Actions</h2>
+          <span class="status-pill">Steps 2-3</span>
+        </div>
+
+        <div class="status-banner status-${state.statusTone}">
+          ${escapeHtml(state.statusMessage)}
+        </div>
+
+        <div class="action-grid">
+          <button
+            type="button"
+            class="primary-action"
+            data-action="scan"
+            ${state.isScanning ? "disabled" : ""}
+          >
+            ${state.isScanning ? "Scanning..." : "Scan page"}
+          </button>
+          <button type="button" class="secondary-action" disabled>
+            Suggest values
+          </button>
+          <button type="button" class="secondary-action" disabled>
+            Fill approved fields
+          </button>
+        </div>
+
+        <p class="panel-note">
+          Suggestion and fill actions stay disabled until the next implementation steps.
+        </p>
+      </section>
+
+      <section class="panel" aria-labelledby="fields-heading">
+        <div class="panel-heading">
+          <h2 id="fields-heading">Detected Fields</h2>
+          <span class="muted-label">${state.detectedFields.length} fields</span>
+        </div>
+
+        ${renderFieldList(state.detectedFields)}
+      </section>
+
+      <section class="panel settings-panel" aria-labelledby="settings-heading">
+        <div class="panel-heading">
+          <h2 id="settings-heading">Settings</h2>
+          <span class="muted-label">Local only</span>
+        </div>
+
+        <label class="field">
+          <span>API endpoint URL</span>
+          <input
+            type="url"
+            name="apiEndpoint"
+            value="${escapeHtml(state.apiEndpoint)}"
+            placeholder="https://api.example.com/v1/chat/completions"
+          />
+        </label>
+
+        <label class="field">
+          <span>API key</span>
+          <input
+            type="password"
+            name="apiKey"
+            value="${escapeHtml(state.apiKey)}"
+            placeholder="Stored locally for MVP use"
+          />
+        </label>
+
+        <label class="field">
+          <span>User profile JSON</span>
+          <textarea
+            name="profileJson"
+            spellcheck="false"
+            rows="16"
+          >${escapeHtml(state.profileJson)}</textarea>
+        </label>
+      </section>
+    </main>
+  `;
+
+  const scanButton = app.querySelector<HTMLButtonElement>("[data-action='scan']");
+  scanButton?.addEventListener("click", () => {
+    void handleScan();
+  });
+
+  const apiEndpointInput = app.querySelector<HTMLInputElement>("input[name='apiEndpoint']");
+  apiEndpointInput?.addEventListener("input", (event) => {
+    state.apiEndpoint = (event.currentTarget as HTMLInputElement).value;
+  });
+
+  const apiKeyInput = app.querySelector<HTMLInputElement>("input[name='apiKey']");
+  apiKeyInput?.addEventListener("input", (event) => {
+    state.apiKey = (event.currentTarget as HTMLInputElement).value;
+  });
+
+  const profileTextarea = app.querySelector<HTMLTextAreaElement>("textarea[name='profileJson']");
+  profileTextarea?.addEventListener("input", (event) => {
+    state.profileJson = (event.currentTarget as HTMLTextAreaElement).value;
+  });
+}
+
+async function getActiveTabId(): Promise<number> {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+  if (typeof tab?.id !== "number") {
+    throw new Error("No active tab is available for scanning.");
+  }
+
+  return tab.id;
+}
+
+async function handleScan(): Promise<void> {
+  state.isScanning = true;
+  state.statusMessage = "Scanning the active page for visible form fields...";
+  state.statusTone = "neutral";
+  render();
+
+  try {
+    const tabId = await getActiveTabId();
+    const [result] = await chrome.scripting.executeScript({
+      target: { tabId },
+      func: scanPageFields
+    });
+
+    state.detectedFields = result?.result ?? [];
+    state.statusMessage = `Scan complete. Found ${state.detectedFields.length} visible field(s).`;
+    state.statusTone = "success";
+  } catch (error) {
+    state.detectedFields = [];
+    state.statusMessage =
+      error instanceof Error ? error.message : "Scanning failed for an unknown reason.";
+    state.statusTone = "error";
+  } finally {
+    state.isScanning = false;
+    render();
+  }
+}
+
+render();

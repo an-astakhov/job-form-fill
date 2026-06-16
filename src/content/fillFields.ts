@@ -1,7 +1,7 @@
-import type { ApprovedSuggestion, FillResult } from "../shared/types";
+import type { FillInstruction, FillResult } from "../shared/types";
 
-export function fillApprovedFields(
-  approvedSuggestions: ApprovedSuggestion[]
+export function fillFieldValues(
+  fillInstructions: FillInstruction[]
 ): FillResult[] {
   const maxTextLength = 160;
 
@@ -194,11 +194,11 @@ export function fillApprovedFields(
     };
   };
 
-  return approvedSuggestions.map((approvedSuggestion) => {
-    const element = elementByInternalId.get(approvedSuggestion.internalId);
+  return fillInstructions.map((fillInstruction) => {
+    const element = elementByInternalId.get(fillInstruction.internalId);
     if (!element) {
       return {
-        internalId: approvedSuggestion.internalId,
+        internalId: fillInstruction.internalId,
         success: false,
         message: "Field was not found on the current page."
       };
@@ -207,8 +207,8 @@ export function fillApprovedFields(
     if (element instanceof HTMLSelectElement) {
       return fillSelectElement(
         element,
-        approvedSuggestion.value,
-        approvedSuggestion.internalId
+        fillInstruction.value,
+        fillInstruction.internalId
       );
     }
 
@@ -216,27 +216,27 @@ export function fillApprovedFields(
       element instanceof HTMLInputElement ||
       element instanceof HTMLTextAreaElement
     ) {
-      setNativeValue(element, approvedSuggestion.value);
+      setNativeValue(element, fillInstruction.value);
       dispatchFieldEvents(element);
       return {
-        internalId: approvedSuggestion.internalId,
+        internalId: fillInstruction.internalId,
         success: true,
         message: "Filled input value."
       };
     }
 
     if (element.isContentEditable || element.getAttribute("role") === "textbox") {
-      element.textContent = approvedSuggestion.value;
+      element.textContent = fillInstruction.value;
       dispatchFieldEvents(element);
       return {
-        internalId: approvedSuggestion.internalId,
+        internalId: fillInstruction.internalId,
         success: true,
         message: "Filled editable text content."
       };
     }
 
     return {
-      internalId: approvedSuggestion.internalId,
+      internalId: fillInstruction.internalId,
       success: false,
       message: "Field type is not supported for filling."
     };

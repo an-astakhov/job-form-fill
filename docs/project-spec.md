@@ -17,7 +17,7 @@ A few implementation notes and assumptions:
 
 Build a personal-use Chrome Extension, Manifest V3, for AI-assisted autofilling job application forms such as Workday, Greenhouse, Lever, and SmartRecruiters.
 
-The extension must **not** auto-submit forms. It should only scan the current page, propose values, let the user review them, and fill approved fields.
+The extension must **not** auto-submit forms. It should scan the current page, propose values, and fill the fields that are safe enough to autofill while leaving the rest for manual editing.
 
 ## Functional Requirements
 
@@ -26,8 +26,8 @@ The extension must **not** auto-submit forms. It should only scan the current pa
 3. Send the field list plus a locally stored user profile to an OpenAI-compatible API endpoint.
 4. Receive structured fill suggestions.
 5. Show suggestions in the popup UI.
-6. Let the user approve individual fields.
-7. Fill only approved fields into the current page.
+6. Fill supported fields into the current page in one step.
+7. Leave unsupported or unsafe fields untouched for manual editing.
 8. Never submit the application automatically.
 
 ## Tech Stack
@@ -57,8 +57,7 @@ Host permissions should be minimal. For MVP, rely on `activeTab` where possible.
 
 The popup should have:
 
-- Button: `Scan page`
-- Button: `Suggest values`
+- Button: `Autofill page`
 - List of detected fields
 - For each detected field:
   - detected label
@@ -66,8 +65,8 @@ The popup should have:
   - current value if any
   - suggested value
   - confidence score
-  - checkbox for approval
-- Button: `Fill approved fields`
+  - status
+  - fill result
 - Settings section:
   - API endpoint URL
   - API model
@@ -144,13 +143,13 @@ Also collect surrounding text from the nearest meaningful container, but cap it 
 Implement:
 
 ```ts
-fillFields(approvedSuggestions: ApprovedSuggestion[]): FillResult[]
+fillFields(fillInstructions: FillInstruction[]): FillResult[]
 ```
 
 Where:
 
 ```ts
-type ApprovedSuggestion = {
+type FillInstruction = {
   internalId: string;
   value: string;
 };
@@ -206,7 +205,9 @@ Rules for the model:
 - Use only facts from the supplied profile.
 - Do not invent dates, companies, degrees, addresses, legal statuses, salary expectations, or work authorization answers.
 - If a field cannot be answered from the profile, return `unsupported: true` and `proposedValue: null`.
+- Treat `unsupported` as a last resort for ordinary non-sensitive fields when the profile strongly supports a reasonable guess.
 - For legal, immigration, disability, demographic, EEO, salary, notice-period, and work-authorization questions, only answer if the exact approved answer exists in the profile.
+- For ordinary years-of-experience questions, estimate from dated work history and skill evidence when possible.
 - Prefer concise answers.
 - Do not submit anything.
 - Do not generate fake claims.
@@ -253,7 +254,7 @@ Rules for the model:
 
 System/developer prompt target:
 
-> You are an autofill assistant for a personal job application helper. You map detected web form fields to a supplied user profile. You must use only the supplied profile facts. If unsupported, return unsupported. Never invent facts. Never answer sensitive/legal/work-authorization/demographic questions unless an exact approved answer is present in the profile. Return strict JSON only.
+> You are an autofill assistant for a personal job application helper. You map detected web form fields to a supplied user profile. You must use only the supplied profile facts. Unsupported is the last resort for ordinary fields when the profile strongly supports a reasonable guess. Never invent facts. Never answer sensitive/legal/work-authorization/demographic questions unless an exact approved answer is present in the profile. Return strict JSON only.
 
 The user message should contain the field list and profile.
 
@@ -275,14 +276,13 @@ The MVP is complete when:
 1. Extension loads unpacked in Chrome.
 2. Popup opens.
 3. User can paste/edit profile JSON.
-4. User can scan a normal form page.
+4. User can run one-step autofill on a normal form page.
 5. Detected fields appear in popup.
-6. User can request suggestions from the API.
-7. Suggestions appear next to fields.
-8. User can approve selected suggestions.
-9. Approved text inputs, textareas, and native selects are filled correctly.
+6. Suggestions appear next to fields.
+7. Supported text inputs, textareas, and native selects are filled correctly.
+8. Unsupported or manual-only fields are clearly left for manual handling.
 10. Extension never submits the form.
-11. Unsupported fields are clearly shown as requiring manual input.
+11. Results persist while reopening the popup on the same page.
 
 ### 10. Initial Test Page
 
@@ -302,7 +302,7 @@ Create a local test HTML page with:
 - Unsupported field: `Expected salary`
 - Unsupported field: `Do you require visa sponsorship?`
 
-Use this page to validate scanning, suggestions, approval, and filling.
+Use this page to validate one-step scanning, suggestions, and filling.
 
 ## Implementation Steps
 
@@ -312,10 +312,13 @@ Use this page to validate scanning, suggestions, approval, and filling.
 4. Local profile storage.
 5. API settings storage.
 6. Suggestion API call.
-7. Suggestion rendering and approval checkboxes.
-8. Fill approved fields.
+7. Suggestion rendering.
+8. Fill supported fields.
 9. Test page.
 10. Basic error handling and logging.
+11. Simplify to one-step autofill.
+12. Persist page state and improve suggestion behavior.
+13. Prepare example profile package.
 
 ## Progress
 
@@ -325,10 +328,23 @@ Use this page to validate scanning, suggestions, approval, and filling.
 - [x] Step 4. Local profile storage.
 - [x] Step 5. API settings storage.
 - [x] Step 6. Suggestion API call.
-- [x] Step 7. Suggestion rendering and approval checkboxes.
-- [x] Step 8. Fill approved fields.
+- [x] Step 7. Suggestion rendering.
+- [x] Step 8. Fill supported fields.
 - [x] Step 9. Test page.
 - [x] Step 10. Basic error handling and logging.
+- [x] Step 11. Simplify to one-step autofill.
+- [x] Step 12. Persist page state and improve suggestion behavior.
+- [x] Step 13. Prepare example profile package.
+
+## Current MVP Notes
+
+- The popup now uses a single `Autofill page` action instead of separate scan, suggest, and approve steps.
+- OpenAI Responses API support is in place for the current MVP path.
+- Prompt caching is enabled for stable profile context on OpenAI Responses requests.
+- Page-specific scan results and fill outcomes persist while reopening the popup on the same page.
+- The recommended profile authoring direction is hybrid:
+  - small structured JSON for direct autofill
+  - Markdown notes for richer context and future retrieval
 
 ## Step 1 Scope
 

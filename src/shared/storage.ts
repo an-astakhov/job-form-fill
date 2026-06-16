@@ -9,7 +9,6 @@ export type StoredPopupSettings = {
 };
 
 export type StoredPageState = {
-  approvedByFieldId: Record<string, boolean>;
   detectedFields: DetectedField[];
   fillResultsByFieldId: Record<string, FillResult>;
   lastSuggestionCount: number;
@@ -71,10 +70,6 @@ export async function loadPageState(
   }
 
   return {
-    approvedByFieldId:
-      raw.approvedByFieldId && typeof raw.approvedByFieldId === "object"
-        ? (raw.approvedByFieldId as Record<string, boolean>)
-        : {},
     detectedFields: Array.isArray(raw.detectedFields)
       ? (raw.detectedFields as DetectedField[])
       : [],

@@ -27,8 +27,10 @@ http://127.0.0.1:4173/test-pages/job-application-test.html
 ## Validation flow
 
 1. Open the extension popup on the test page.
-2. Click `Scan page`.
-3. Confirm the popup detects:
+2. Enter API endpoint, model, key, and profile JSON.
+   For OpenAI, use `https://api.openai.com/v1/responses`.
+3. Click `Autofill page`.
+4. Confirm the popup detects:
    - first name
    - last name
    - email
@@ -43,18 +45,13 @@ http://127.0.0.1:4173/test-pages/job-application-test.html
    - expected salary
    - visa sponsorship
    - short cover note contenteditable field
-4. Enter API endpoint, model, key, and profile JSON.
-   For OpenAI, use `https://api.openai.com/v1/responses`.
-5. Click `Suggest values`.
-6. Confirm suggestions render with:
+5. Confirm suggestions render with:
    - proposed value
    - confidence
    - reason
-   - source facts
-   - approval checkbox where allowed
-7. Approve a subset of supported suggestions.
-8. Click `Fill approved fields`.
-9. Confirm:
+   - fill result
+   - unsupported or guess status where appropriate
+6. Confirm:
    - text inputs populate
    - textarea populates
    - native selects choose the expected option

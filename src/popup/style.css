@@ -383,23 +383,6 @@ textarea {
   margin-top: 4px;
 }
 
-.approval-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  margin-top: 12px;
-  font-size: 13px;
-  color: #1a3147;
-}
-
-.approval-row input {
-  margin-top: 2px;
-}
-
-.approval-row-disabled {
-  color: #6b7d90;
-}
-
 .fill-result {
   margin-top: 12px;
   display: grid;

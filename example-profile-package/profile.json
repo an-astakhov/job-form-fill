@@ -1,0 +1,55 @@
+{
+  "personal": {
+    "firstName": "",
+    "lastName": "",
+    "email": "",
+    "phone": "",
+    "city": "",
+    "country": "",
+    "linkedin": "",
+    "github": "",
+    "website": ""
+  },
+  "workAuthorization": {
+    "approvedAnswersOnly": true,
+    "answers": {
+      "visaSponsorshipRequired": "",
+      "authorizedToWorkInCountry": "",
+      "requiresFutureSponsorship": ""
+    }
+  },
+  "currentRole": {
+    "company": "",
+    "title": "",
+    "location": "",
+    "startDate": "",
+    "summary": ""
+  },
+  "experience": [
+    {
+      "company": "",
+      "title": "",
+      "location": "",
+      "startDate": "",
+      "endDate": "",
+      "highlights": [],
+      "skillsUsed": []
+    }
+  ],
+  "education": [
+    {
+      "school": "",
+      "degree": "",
+      "field": "",
+      "graduationYear": ""
+    }
+  ],
+  "skills": [],
+  "standardAnswers": {
+    "noticePeriod": "",
+    "salaryExpectations": "",
+    "willingToRelocate": "",
+    "whyInterestedGeneric": "",
+    "preferredWorkMode": ""
+  }
+}

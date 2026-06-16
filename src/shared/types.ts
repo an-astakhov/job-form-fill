@@ -24,7 +24,7 @@ export type DetectedField = {
   };
 };
 
-export type ApprovedSuggestion = {
+export type FillInstruction = {
   internalId: string;
   value: string;
 };

@@ -327,7 +327,7 @@ Use this page to validate scanning, suggestions, approval, and filling.
 - [x] Step 6. Suggestion API call.
 - [x] Step 7. Suggestion rendering and approval checkboxes.
 - [x] Step 8. Fill approved fields.
-- [ ] Step 9. Test page.
+- [x] Step 9. Test page.
 - [ ] Step 10. Basic error handling and logging.
 
 ## Step 1 Scope

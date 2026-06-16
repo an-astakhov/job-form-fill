@@ -1,4 +1,5 @@
 import "./style.css";
+import { fillApprovedFields } from "../content/fillFields";
 import { scanPageFields } from "../content/fieldScanner";
 import { requestFieldSuggestions } from "../shared/suggestionClient";
 import type { FieldSuggestion } from "../shared/suggestions";
@@ -7,7 +8,11 @@ import {
   savePopupSettings,
   type StoredPopupSettings
 } from "../shared/storage";
-import type { DetectedField } from "../shared/types";
+import type {
+  ApprovedSuggestion,
+  DetectedField,
+  FillResult
+} from "../shared/types";
 
 const defaultProfile = `{
   "personal": {
@@ -48,6 +53,8 @@ type PopupState = {
   apiModel: string;
   approvedByFieldId: Record<string, boolean>;
   detectedFields: DetectedField[];
+  fillResultsByFieldId: Record<string, FillResult>;
+  isFilling: boolean;
   isInitializing: boolean;
   isScanning: boolean;
   isSuggesting: boolean;
@@ -74,6 +81,8 @@ const state: PopupState = {
   apiModel: "",
   approvedByFieldId: {},
   detectedFields: [],
+  fillResultsByFieldId: {},
+  isFilling: false,
   isInitializing: true,
   isScanning: false,
   isSuggesting: false,
@@ -126,6 +135,10 @@ function getSuggestion(fieldId: string): FieldSuggestion | null {
   return state.suggestionsByFieldId[fieldId] ?? null;
 }
 
+function getFillResult(fieldId: string): FillResult | null {
+  return state.fillResultsByFieldId[fieldId] ?? null;
+}
+
 function canApproveSuggestion(suggestion: FieldSuggestion | null): boolean {
   if (!suggestion) {
     return false;
@@ -138,8 +151,25 @@ function canApproveSuggestion(suggestion: FieldSuggestion | null): boolean {
   return typeof suggestion.proposedValue === "string" && suggestion.proposedValue.length > 0;
 }
 
+function getApprovedSuggestions(): ApprovedSuggestion[] {
+  return state.detectedFields
+    .map((field) => {
+      const suggestion = getSuggestion(field.internalId);
+      const approved = state.approvedByFieldId[field.internalId] === true;
+      if (!approved || !canApproveSuggestion(suggestion) || !suggestion?.proposedValue) {
+        return null;
+      }
+
+      return {
+        internalId: field.internalId,
+        value: suggestion.proposedValue
+      } satisfies ApprovedSuggestion;
+    })
+    .filter((item): item is ApprovedSuggestion => item !== null);
+}
+
 function getApprovedCount(): number {
-  return Object.values(state.approvedByFieldId).filter(Boolean).length;
+  return getApprovedSuggestions().length;
 }
 
 function canRequestSuggestions(): boolean {
@@ -147,7 +177,18 @@ function canRequestSuggestions(): boolean {
     !state.isInitializing &&
     !state.isScanning &&
     !state.isSuggesting &&
+    !state.isFilling &&
     state.detectedFields.length > 0
+  );
+}
+
+function canFillApprovedSuggestions(): boolean {
+  return (
+    !state.isInitializing &&
+    !state.isScanning &&
+    !state.isSuggesting &&
+    !state.isFilling &&
+    getApprovedCount() > 0
   );
 }
 
@@ -187,6 +228,20 @@ function getSuggestionStatusClass(suggestion: FieldSuggestion | null): string {
   return "suggestion-status-success";
 }
 
+function renderFillResultSection(fieldId: string): string {
+  const result = getFillResult(fieldId);
+  if (!result) {
+    return "";
+  }
+
+  return `
+    <div class="fill-result ${result.success ? "fill-result-success" : "fill-result-error"}">
+      <strong>${result.success ? "Fill result" : "Fill failed"}</strong>
+      <span>${escapeHtml(result.message)}</span>
+    </div>
+  `;
+}
+
 function renderSuggestionSection(field: DetectedField): string {
   const suggestion = getSuggestion(field.internalId);
   if (!suggestion) {
@@ -204,7 +259,7 @@ function renderSuggestionSection(field: DetectedField): string {
   const canApprove = canApproveSuggestion(suggestion);
   const checked = state.approvedByFieldId[field.internalId] === true;
   const approvalHint = canApprove
-    ? "Approve this suggestion for the future fill step."
+    ? "Approve this suggestion for the fill step."
     : suggestion.unsupported
       ? "This field is unsupported and must be answered manually."
       : suggestion.manualFillRequired
@@ -245,6 +300,8 @@ function renderSuggestionSection(field: DetectedField): string {
         />
         <span>${escapeHtml(approvalHint)}</span>
       </label>
+
+      ${renderFillResultSection(field.internalId)}
     </div>
   `;
 }
@@ -327,7 +384,7 @@ function render(): void {
       <section class="panel actions-panel" aria-labelledby="actions-heading">
         <div class="panel-heading">
           <h2 id="actions-heading">Actions</h2>
-          <span class="status-pill">Step 7 wired</span>
+          <span class="status-pill">Step 8 wired</span>
         </div>
 
         <div class="status-banner status-${state.statusTone}">
@@ -339,7 +396,7 @@ function render(): void {
             type="button"
             class="primary-action"
             data-action="scan"
-            ${state.isScanning || state.isInitializing || state.isSuggesting ? "disabled" : ""}
+            ${state.isScanning || state.isInitializing || state.isSuggesting || state.isFilling ? "disabled" : ""}
           >
             ${state.isScanning ? "Scanning..." : "Scan page"}
           </button>
@@ -351,15 +408,20 @@ function render(): void {
           >
             ${state.isSuggesting ? "Requesting suggestions..." : "Suggest values"}
           </button>
-          <button type="button" class="secondary-action" disabled>
-            Fill approved fields (${approvedCount})
+          <button
+            type="button"
+            class="secondary-action"
+            data-action="fill"
+            ${canFillApprovedSuggestions() ? "" : "disabled"}
+          >
+            ${state.isFilling ? "Filling approved fields..." : `Fill approved fields (${approvedCount})`}
           </button>
         </div>
 
         <p class="panel-note">
           ${state.lastSuggestionCount > 0
-            ? `The last suggestion request returned ${state.lastSuggestionCount} suggestion(s). ${approvedCount} field(s) are currently approved for the future fill step.`
-            : "Request suggestions first, then review each field and approve the ones you want to fill later."}
+            ? `The last suggestion request returned ${state.lastSuggestionCount} suggestion(s). ${approvedCount} field(s) are currently approved for filling.`
+            : "Request suggestions first, then review each field and approve the ones you want to fill."}
         </p>
       </section>
 
@@ -439,6 +501,11 @@ function render(): void {
   const suggestButton = app.querySelector<HTMLButtonElement>("[data-action='suggest']");
   suggestButton?.addEventListener("click", () => {
     void handleSuggest();
+  });
+
+  const fillButton = app.querySelector<HTMLButtonElement>("[data-action='fill']");
+  fillButton?.addEventListener("click", () => {
+    void handleFill();
   });
 
   const approvalInputs = app.querySelectorAll<HTMLInputElement>("[data-approve-field-id]");
@@ -552,6 +619,7 @@ async function getActiveTabId(): Promise<number> {
 
 function resetSuggestionState(): void {
   state.approvedByFieldId = {};
+  state.fillResultsByFieldId = {};
   state.lastSuggestionCount = 0;
   state.suggestionsByFieldId = {};
 }
@@ -636,10 +704,11 @@ async function handleSuggest(): Promise<void> {
 
     state.lastSuggestionCount = result.suggestions.length;
     state.approvedByFieldId = {};
+    state.fillResultsByFieldId = {};
     state.suggestionsByFieldId = Object.fromEntries(
       result.suggestions.map((suggestion) => [suggestion.internalId, suggestion])
     );
-    state.statusMessage = `Suggestion request completed. Received ${result.suggestions.length} structured suggestion(s). Review each field and approve the ones you want to fill later.`;
+    state.statusMessage = `Suggestion request completed. Received ${result.suggestions.length} structured suggestion(s). Review each field and approve the ones you want to fill.`;
     state.statusTone = "success";
   } catch (error) {
     state.lastSuggestionCount = 0;
@@ -648,6 +717,49 @@ async function handleSuggest(): Promise<void> {
     state.statusTone = "error";
   } finally {
     state.isSuggesting = false;
+    render();
+  }
+}
+
+async function handleFill(): Promise<void> {
+  const approvedSuggestions = getApprovedSuggestions();
+  if (approvedSuggestions.length === 0) {
+    state.statusMessage = "Approve at least one suggestion before filling.";
+    state.statusTone = "error";
+    render();
+    return;
+  }
+
+  state.isFilling = true;
+  state.statusMessage = `Filling ${approvedSuggestions.length} approved field(s) on the active page...`;
+  state.statusTone = "neutral";
+  render();
+
+  try {
+    const tabId = await getActiveTabId();
+    const [result] = await chrome.scripting.executeScript({
+      target: { tabId },
+      func: fillApprovedFields,
+      args: [approvedSuggestions]
+    });
+
+    const fillResults = (result?.result ?? []) as FillResult[];
+    state.fillResultsByFieldId = Object.fromEntries(
+      fillResults.map((fillResult) => [fillResult.internalId, fillResult])
+    );
+
+    const successCount = fillResults.filter((fillResult) => fillResult.success).length;
+    const failureCount = fillResults.length - successCount;
+
+    state.statusMessage = `Fill completed. ${successCount} field(s) succeeded, ${failureCount} failed.`;
+    state.statusTone = failureCount === 0 ? "success" : "error";
+  } catch (error) {
+    state.fillResultsByFieldId = {};
+    state.statusMessage =
+      error instanceof Error ? error.message : "Filling approved fields failed.";
+    state.statusTone = "error";
+  } finally {
+    state.isFilling = false;
     render();
   }
 }

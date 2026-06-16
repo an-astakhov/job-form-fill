@@ -363,6 +363,31 @@ textarea {
   color: #6b7d90;
 }
 
+.fill-result {
+  margin-top: 12px;
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+.fill-result strong {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.fill-result-success {
+  background: #e5f1dd;
+  color: #2f5d17;
+}
+
+.fill-result-error {
+  background: #f9e1e1;
+  color: #8a2d2d;
+}
+
 .panel-note {
   margin: 12px 0 0;
   font-size: 13px;

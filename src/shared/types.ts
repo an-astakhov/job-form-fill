@@ -23,3 +23,14 @@ export type DetectedField = {
     height: number;
   };
 };
+
+export type ApprovedSuggestion = {
+  internalId: string;
+  value: string;
+};
+
+export type FillResult = {
+  internalId: string;
+  success: boolean;
+  message: string;
+};

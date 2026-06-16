@@ -1,0 +1,16 @@
+{
+  "name": "job-form-fill",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.270",
+    "typescript": "^5.8.3",
+    "vite": "^7.0.0"
+  }
+}

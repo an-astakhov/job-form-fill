@@ -320,8 +320,8 @@ Use this page to validate scanning, suggestions, approval, and filling.
 - [x] Step 1. Manifest and popup skeleton.
 - [x] Step 2. Content script field scanner.
 - [x] Step 3. Display detected fields in popup.
-- [ ] Step 4. Local profile storage.
-- [ ] Step 5. API settings storage.
+- [x] Step 4. Local profile storage.
+- [x] Step 5. API settings storage.
 - [ ] Step 6. Suggestion API call.
 - [ ] Step 7. Suggestion rendering and approval checkboxes.
 - [ ] Step 8. Fill approved fields.

@@ -1,5 +1,10 @@
 import "./style.css";
 import { scanPageFields } from "../content/fieldScanner";
+import {
+  loadPopupSettings,
+  savePopupSettings,
+  type StoredPopupSettings
+} from "../shared/storage";
 import type { DetectedField } from "../shared/types";
 
 const defaultProfile = `{
@@ -39,10 +44,13 @@ type PopupState = {
   apiEndpoint: string;
   apiKey: string;
   detectedFields: DetectedField[];
+  isInitializing: boolean;
   isScanning: boolean;
   profileJson: string;
   statusMessage: string;
   statusTone: "neutral" | "success" | "error";
+  storageMessage: string;
+  storageTone: "neutral" | "success" | "error";
 };
 
 const appRoot = document.querySelector<HTMLDivElement>("#app");
@@ -57,11 +65,24 @@ const state: PopupState = {
   apiEndpoint: "",
   apiKey: "",
   detectedFields: [],
+  isInitializing: true,
   isScanning: false,
   profileJson: defaultProfile,
   statusMessage: "Ready to scan the active tab.",
-  statusTone: "neutral"
+  statusTone: "neutral",
+  storageMessage: "Loading saved local settings...",
+  storageTone: "neutral"
 };
+
+let saveTimeoutId: number | null = null;
+
+function getCurrentSettings(): StoredPopupSettings {
+  return {
+    apiEndpoint: state.apiEndpoint,
+    apiKey: state.apiKey,
+    profileJson: state.profileJson
+  };
+}
 
 function escapeHtml(value: string): string {
   return value
@@ -114,7 +135,7 @@ function renderFieldList(fields: DetectedField[]): string {
                 <span class="field-type-chip">${escapeHtml(formatFieldType(field))}</span>
               </div>
               <p class="field-meta">
-                ${field.required ? "Required" : "Optional"} · ${escapeHtml(field.internalId)}
+                ${field.required ? "Required" : "Optional"} - ${escapeHtml(field.internalId)}
               </p>
               <dl class="field-details">
                 <div>
@@ -158,7 +179,7 @@ function render(): void {
       <section class="panel actions-panel" aria-labelledby="actions-heading">
         <div class="panel-heading">
           <h2 id="actions-heading">Actions</h2>
-          <span class="status-pill">Steps 2-3</span>
+          <span class="status-pill">Steps 4-5 next</span>
         </div>
 
         <div class="status-banner status-${state.statusTone}">
@@ -170,7 +191,7 @@ function render(): void {
             type="button"
             class="primary-action"
             data-action="scan"
-            ${state.isScanning ? "disabled" : ""}
+            ${state.isScanning || state.isInitializing ? "disabled" : ""}
           >
             ${state.isScanning ? "Scanning..." : "Scan page"}
           </button>
@@ -199,7 +220,11 @@ function render(): void {
       <section class="panel settings-panel" aria-labelledby="settings-heading">
         <div class="panel-heading">
           <h2 id="settings-heading">Settings</h2>
-          <span class="muted-label">Local only</span>
+          <span class="muted-label">Stored locally</span>
+        </div>
+
+        <div class="status-banner status-${state.storageTone}">
+          ${escapeHtml(state.storageMessage)}
         </div>
 
         <label class="field">
@@ -207,8 +232,10 @@ function render(): void {
           <input
             type="url"
             name="apiEndpoint"
+            autocomplete="off"
             value="${escapeHtml(state.apiEndpoint)}"
             placeholder="https://api.example.com/v1/chat/completions"
+            ${state.isInitializing ? "disabled" : ""}
           />
         </label>
 
@@ -217,8 +244,10 @@ function render(): void {
           <input
             type="password"
             name="apiKey"
+            autocomplete="off"
             value="${escapeHtml(state.apiKey)}"
             placeholder="Stored locally for MVP use"
+            ${state.isInitializing ? "disabled" : ""}
           />
         </label>
 
@@ -228,6 +257,7 @@ function render(): void {
             name="profileJson"
             spellcheck="false"
             rows="16"
+            ${state.isInitializing ? "disabled" : ""}
           >${escapeHtml(state.profileJson)}</textarea>
         </label>
       </section>
@@ -242,17 +272,79 @@ function render(): void {
   const apiEndpointInput = app.querySelector<HTMLInputElement>("input[name='apiEndpoint']");
   apiEndpointInput?.addEventListener("input", (event) => {
     state.apiEndpoint = (event.currentTarget as HTMLInputElement).value;
+    queueSettingsSave();
   });
 
   const apiKeyInput = app.querySelector<HTMLInputElement>("input[name='apiKey']");
   apiKeyInput?.addEventListener("input", (event) => {
     state.apiKey = (event.currentTarget as HTMLInputElement).value;
+    queueSettingsSave();
   });
 
   const profileTextarea = app.querySelector<HTMLTextAreaElement>("textarea[name='profileJson']");
   profileTextarea?.addEventListener("input", (event) => {
     state.profileJson = (event.currentTarget as HTMLTextAreaElement).value;
+    queueSettingsSave();
   });
+}
+
+function updateStorageBanner(): void {
+  const banner = app.querySelector<HTMLElement>(".settings-panel .status-banner");
+  if (!banner) {
+    return;
+  }
+
+  banner.className = `status-banner status-${state.storageTone}`;
+  banner.textContent = state.storageMessage;
+}
+
+function queueSettingsSave(): void {
+  state.storageMessage = "Saving settings locally...";
+  state.storageTone = "neutral";
+  updateStorageBanner();
+
+  if (saveTimeoutId !== null) {
+    window.clearTimeout(saveTimeoutId);
+  }
+
+  saveTimeoutId = window.setTimeout(() => {
+    void persistSettings();
+  }, 300);
+}
+
+async function persistSettings(): Promise<void> {
+  try {
+    await savePopupSettings(getCurrentSettings());
+    state.storageMessage = "Settings saved locally in Chrome extension storage.";
+    state.storageTone = "success";
+  } catch (error) {
+    state.storageMessage =
+      error instanceof Error ? error.message : "Failed to save settings locally.";
+    state.storageTone = "error";
+  } finally {
+    saveTimeoutId = null;
+    updateStorageBanner();
+  }
+}
+
+async function initializePopup(): Promise<void> {
+  render();
+
+  try {
+    const settings = await loadPopupSettings(getCurrentSettings());
+    state.apiEndpoint = settings.apiEndpoint;
+    state.apiKey = settings.apiKey;
+    state.profileJson = settings.profileJson;
+    state.storageMessage = "Settings loaded from local Chrome extension storage.";
+    state.storageTone = "success";
+  } catch (error) {
+    state.storageMessage =
+      error instanceof Error ? error.message : "Failed to load local settings.";
+    state.storageTone = "error";
+  } finally {
+    state.isInitializing = false;
+    render();
+  }
 }
 
 async function getActiveTabId(): Promise<number> {
@@ -292,4 +384,4 @@ async function handleScan(): Promise<void> {
   }
 }
 
-render();
+void initializePopup();

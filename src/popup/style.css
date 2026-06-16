@@ -179,23 +179,31 @@ textarea {
 }
 
 .field-card {
-  padding: 12px;
+  padding: 14px;
   border-radius: 12px;
   border: 1px solid rgba(16, 32, 51, 0.1);
   background: rgba(250, 251, 252, 0.96);
 }
 
 .field-card-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.field-heading {
+  display: grid;
+  gap: 8px;
 }
 
 .field-card-header h3 {
   margin: 0;
   font-size: 14px;
   line-height: 1.35;
+}
+
+.field-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .field-type-chip {
@@ -208,14 +216,8 @@ textarea {
   white-space: nowrap;
 }
 
-.field-meta {
-  margin: 8px 0 0;
-  font-size: 12px;
-  color: #617386;
-}
-
 .field-details {
-  margin: 10px 0 0;
+  margin: 0;
   display: grid;
   gap: 8px;
 }
@@ -237,6 +239,28 @@ textarea {
   margin: 0;
   font-size: 13px;
   color: #1a3147;
+  word-break: break-word;
+}
+
+.current-value {
+  display: grid;
+  gap: 3px;
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f3f7fb;
+}
+
+.current-value strong {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #637486;
+}
+
+.current-value span {
+  font-size: 13px;
+  color: #183047;
   word-break: break-word;
 }
 
@@ -265,6 +289,19 @@ textarea {
   justify-content: space-between;
   gap: 8px;
   margin-bottom: 10px;
+}
+
+.suggestion-primary {
+  font-size: 14px;
+  font-weight: 600;
+  color: #16324b;
+  word-break: break-word;
+}
+
+.suggestion-reason {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: #4f6377;
 }
 
 .suggestion-status,
@@ -388,6 +425,92 @@ textarea {
   color: #8a2d2d;
 }
 
+.diagnostic-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.diagnostic-card {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #f4f7fa;
+  border: 1px solid rgba(18, 32, 51, 0.08);
+}
+
+.diagnostic-card strong {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #637486;
+}
+
+.diagnostic-card span {
+  font-size: 18px;
+  font-weight: 700;
+  color: #183047;
+}
+
+.diagnostic-warning {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #f8ead0;
+  color: #875814;
+  font-size: 13px;
+}
+
+.log-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.log-entry {
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid rgba(18, 32, 51, 0.08);
+}
+
+.log-time {
+  font-size: 11px;
+  font-weight: 700;
+  color: #6a7b8d;
+}
+
+.log-message {
+  font-size: 13px;
+  color: #1a3147;
+  word-break: break-word;
+}
+
+.log-success {
+  background: #e5f1dd;
+}
+
+.log-warning {
+  background: #fbefdb;
+}
+
+.log-error {
+  background: #f9e1e1;
+}
+
+@media (max-width: 520px) {
+  .diagnostic-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .panel-note {
   margin: 12px 0 0;
   font-size: 13px;
@@ -428,4 +551,8 @@ textarea {
 .field textarea:focus {
   outline: 2px solid rgba(31, 106, 165, 0.18);
   border-color: rgba(31, 106, 165, 0.38);
+}
+
+.settings-actions {
+  margin-top: 12px;
 }

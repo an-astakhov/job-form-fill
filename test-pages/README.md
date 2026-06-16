@@ -44,6 +44,7 @@ http://127.0.0.1:4173/test-pages/job-application-test.html
    - visa sponsorship
    - short cover note contenteditable field
 4. Enter API endpoint, model, key, and profile JSON.
+   For OpenAI, use `https://api.openai.com/v1/responses`.
 5. Click `Suggest values`.
 6. Confirm suggestions render with:
    - proposed value

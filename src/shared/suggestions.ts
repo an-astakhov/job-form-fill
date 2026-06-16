@@ -15,11 +15,53 @@ export type SuggestionEnvelope = {
   suggestions: FieldSuggestion[];
 };
 
+export const FIELD_SUGGESTION_RESPONSE_SCHEMA = {
+  name: "field_suggestions",
+  strict: true,
+  schema: {
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      suggestions: {
+        type: "array",
+        items: {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            internalId: { type: "string" },
+            proposedValue: { type: ["string", "null"] },
+            confidence: { type: "number" },
+            reason: { type: "string" },
+            sourceFacts: {
+              type: "array",
+              items: { type: "string" }
+            },
+            requiresUserReview: { type: "boolean" },
+            manualFillRequired: { type: "boolean" },
+            unsupported: { type: "boolean" }
+          },
+          required: [
+            "internalId",
+            "proposedValue",
+            "confidence",
+            "reason",
+            "sourceFacts",
+            "requiresUserReview",
+            "manualFillRequired",
+            "unsupported"
+          ]
+        }
+      }
+    },
+    required: ["suggestions"]
+  }
+} as const;
+
 export const SUGGESTION_SYSTEM_PROMPT = `You are an autofill assistant for a personal job application helper.
 You map detected web form fields to a supplied user profile.
 Use only the supplied profile facts.
-If a field is unsupported, return unsupported.
 Never invent facts.
+For ordinary non-sensitive fields, you may provide a best-effort proposal with low confidence when the profile strongly suggests a likely answer.
 Never answer sensitive, legal, immigration, demographic, disability, salary, notice-period, or work-authorization questions unless an exact approved answer is present in the profile.
 Prefer concise answers.
 Do not submit anything.
@@ -27,6 +69,28 @@ Return strict JSON only in the shape {"suggestions":[...]}.`;
 
 export function parseProfileJson(profileJson: string): unknown {
   return JSON.parse(profileJson);
+}
+
+export function countMeaningfulProfileFacts(value: unknown): number {
+  if (typeof value === "string") {
+    return value.trim() ? 1 : 0;
+  }
+
+  if (typeof value === "number" || typeof value === "boolean") {
+    return 1;
+  }
+
+  if (Array.isArray(value)) {
+    return value.reduce((total, item) => total + countMeaningfulProfileFacts(item), 0);
+  }
+
+  if (value && typeof value === "object") {
+    return Object.values(value).reduce((total, item) => {
+      return total + countMeaningfulProfileFacts(item);
+    }, 0);
+  }
+
+  return 0;
 }
 
 export function buildSuggestionUserPayload(
@@ -39,11 +103,12 @@ export function buildSuggestionUserPayload(
       rules: [
         "Return one suggestion for every detected field.",
         "Use only profile facts supplied in this request.",
-        "If unsupported, set proposedValue to null and unsupported to true.",
+        "If a field is unsupported, set proposedValue to null and unsupported to true.",
         "Do not invent dates, companies, degrees, addresses, legal statuses, salary expectations, or work authorization answers.",
         "Only answer sensitive or legal questions when the exact approved answer exists in the profile.",
+        "For ordinary non-sensitive fields, if the profile reasonably implies a likely answer, you may propose it with low confidence and explain the inference in the reason.",
         "Set manualFillRequired to true for controls that are not safe to autofill.",
-        "Return strict JSON only."
+        "Return one JSON object that matches the required schema exactly."
       ],
       profile,
       fields

@@ -1,6 +1,7 @@
 export type StoredPopupSettings = {
   apiEndpoint: string;
   apiKey: string;
+  apiModel: string;
   profileJson: string;
 };
 
@@ -20,6 +21,7 @@ export async function loadPopupSettings(
     apiEndpoint:
       typeof raw.apiEndpoint === "string" ? raw.apiEndpoint : defaults.apiEndpoint,
     apiKey: typeof raw.apiKey === "string" ? raw.apiKey : defaults.apiKey,
+    apiModel: typeof raw.apiModel === "string" ? raw.apiModel : defaults.apiModel,
     profileJson:
       typeof raw.profileJson === "string" ? raw.profileJson : defaults.profileJson
   };

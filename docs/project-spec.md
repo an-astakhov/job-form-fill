@@ -8,6 +8,7 @@ A few implementation notes and assumptions:
 
 - `internalId` should be stable within a single scan result. Long-term persistence across page reloads is not required for the MVP.
 - "OpenAI-compatible API endpoint" is broad, so the implementation should isolate request construction behind a small client module. The exact response envelope can be finalized in Step 6.
+- A separate `model` setting is required in practice for most OpenAI-compatible chat-completions endpoints, even though it was not explicitly listed in the original settings UI.
 - Custom dropdowns should be detected but not force-filled in the first version unless the DOM is clearly a safe native control.
 - Nearby/context text should be capped aggressively to avoid sending excessive page content.
 - Sensitive questions should default to unsupported unless the profile contains an explicit approved answer.
@@ -69,6 +70,7 @@ The popup should have:
 - Button: `Fill approved fields`
 - Settings section:
   - API endpoint URL
+  - API model
   - API key, for personal local use only
   - editable user profile JSON textarea
 
@@ -322,8 +324,8 @@ Use this page to validate scanning, suggestions, approval, and filling.
 - [x] Step 3. Display detected fields in popup.
 - [x] Step 4. Local profile storage.
 - [x] Step 5. API settings storage.
-- [ ] Step 6. Suggestion API call.
-- [ ] Step 7. Suggestion rendering and approval checkboxes.
+- [x] Step 6. Suggestion API call.
+- [x] Step 7. Suggestion rendering and approval checkboxes.
 - [ ] Step 8. Fill approved fields.
 - [ ] Step 9. Test page.
 - [ ] Step 10. Basic error handling and logging.

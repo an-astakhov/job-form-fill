@@ -1,5 +1,7 @@
 import "./style.css";
 import { scanPageFields } from "../content/fieldScanner";
+import { requestFieldSuggestions } from "../shared/suggestionClient";
+import type { FieldSuggestion } from "../shared/suggestions";
 import {
   loadPopupSettings,
   savePopupSettings,
@@ -43,14 +45,19 @@ const defaultProfile = `{
 type PopupState = {
   apiEndpoint: string;
   apiKey: string;
+  apiModel: string;
+  approvedByFieldId: Record<string, boolean>;
   detectedFields: DetectedField[];
   isInitializing: boolean;
   isScanning: boolean;
+  isSuggesting: boolean;
+  lastSuggestionCount: number;
   profileJson: string;
   statusMessage: string;
   statusTone: "neutral" | "success" | "error";
   storageMessage: string;
   storageTone: "neutral" | "success" | "error";
+  suggestionsByFieldId: Record<string, FieldSuggestion>;
 };
 
 const appRoot = document.querySelector<HTMLDivElement>("#app");
@@ -64,14 +71,19 @@ const app = appRoot;
 const state: PopupState = {
   apiEndpoint: "",
   apiKey: "",
+  apiModel: "",
+  approvedByFieldId: {},
   detectedFields: [],
   isInitializing: true,
   isScanning: false,
+  isSuggesting: false,
+  lastSuggestionCount: 0,
   profileJson: defaultProfile,
   statusMessage: "Ready to scan the active tab.",
   statusTone: "neutral",
   storageMessage: "Loading saved local settings...",
-  storageTone: "neutral"
+  storageTone: "neutral",
+  suggestionsByFieldId: {}
 };
 
 let saveTimeoutId: number | null = null;
@@ -80,6 +92,7 @@ function getCurrentSettings(): StoredPopupSettings {
   return {
     apiEndpoint: state.apiEndpoint,
     apiKey: state.apiKey,
+    apiModel: state.apiModel,
     profileJson: state.profileJson
   };
 }
@@ -103,6 +116,137 @@ function formatFieldType(field: DetectedField): string {
   }
 
   return field.tagName;
+}
+
+function formatConfidence(confidence: number): string {
+  return `${Math.round(confidence * 100)}%`;
+}
+
+function getSuggestion(fieldId: string): FieldSuggestion | null {
+  return state.suggestionsByFieldId[fieldId] ?? null;
+}
+
+function canApproveSuggestion(suggestion: FieldSuggestion | null): boolean {
+  if (!suggestion) {
+    return false;
+  }
+
+  if (suggestion.unsupported || suggestion.manualFillRequired) {
+    return false;
+  }
+
+  return typeof suggestion.proposedValue === "string" && suggestion.proposedValue.length > 0;
+}
+
+function getApprovedCount(): number {
+  return Object.values(state.approvedByFieldId).filter(Boolean).length;
+}
+
+function canRequestSuggestions(): boolean {
+  return (
+    !state.isInitializing &&
+    !state.isScanning &&
+    !state.isSuggesting &&
+    state.detectedFields.length > 0
+  );
+}
+
+function getSuggestionStatusLabel(suggestion: FieldSuggestion | null): string {
+  if (!suggestion) {
+    return "No suggestion yet";
+  }
+
+  if (suggestion.unsupported) {
+    return "Unsupported";
+  }
+
+  if (suggestion.manualFillRequired) {
+    return "Manual fill required";
+  }
+
+  if (suggestion.requiresUserReview) {
+    return "Review required";
+  }
+
+  return "Ready";
+}
+
+function getSuggestionStatusClass(suggestion: FieldSuggestion | null): string {
+  if (!suggestion) {
+    return "suggestion-status-neutral";
+  }
+
+  if (suggestion.unsupported) {
+    return "suggestion-status-error";
+  }
+
+  if (suggestion.manualFillRequired || suggestion.requiresUserReview) {
+    return "suggestion-status-warning";
+  }
+
+  return "suggestion-status-success";
+}
+
+function renderSuggestionSection(field: DetectedField): string {
+  const suggestion = getSuggestion(field.internalId);
+  if (!suggestion) {
+    return `
+      <div class="suggestion-box suggestion-box-empty">
+        <p class="suggestion-empty">No suggestion has been requested for this field yet.</p>
+      </div>
+    `;
+  }
+
+  const sourceFacts = suggestion.sourceFacts.length
+    ? suggestion.sourceFacts.map((fact) => `<li>${escapeHtml(fact)}</li>`).join("")
+    : "<li>No supporting source facts were returned.</li>";
+
+  const canApprove = canApproveSuggestion(suggestion);
+  const checked = state.approvedByFieldId[field.internalId] === true;
+  const approvalHint = canApprove
+    ? "Approve this suggestion for the future fill step."
+    : suggestion.unsupported
+      ? "This field is unsupported and must be answered manually."
+      : suggestion.manualFillRequired
+        ? "This field is marked as manual fill required."
+        : "This field requires review before approval.";
+
+  return `
+    <div class="suggestion-box">
+      <div class="suggestion-header">
+        <span class="suggestion-status ${getSuggestionStatusClass(suggestion)}">
+          ${escapeHtml(getSuggestionStatusLabel(suggestion))}
+        </span>
+        <span class="confidence-chip">Confidence ${escapeHtml(formatConfidence(suggestion.confidence))}</span>
+      </div>
+
+      <dl class="suggestion-details">
+        <div>
+          <dt>Suggested value</dt>
+          <dd>${escapeHtml(suggestion.proposedValue ?? "(none)")}</dd>
+        </div>
+        <div>
+          <dt>Reason</dt>
+          <dd>${escapeHtml(suggestion.reason || "(no reason returned)")}</dd>
+        </div>
+      </dl>
+
+      <div class="source-facts">
+        <p>Source facts</p>
+        <ul>${sourceFacts}</ul>
+      </div>
+
+      <label class="approval-row ${canApprove ? "" : "approval-row-disabled"}">
+        <input
+          type="checkbox"
+          data-approve-field-id="${escapeHtml(field.internalId)}"
+          ${checked ? "checked" : ""}
+          ${canApprove ? "" : "disabled"}
+        />
+        <span>${escapeHtml(approvalHint)}</span>
+      </label>
+    </div>
+  `;
 }
 
 function renderFieldList(fields: DetectedField[]): string {
@@ -157,6 +301,8 @@ function renderFieldList(fields: DetectedField[]): string {
                   <dd>${escapeHtml(nearbyText.join(" | ") || "(none)")}</dd>
                 </div>
               </dl>
+
+              ${renderSuggestionSection(field)}
             </article>
           `;
         })
@@ -166,6 +312,8 @@ function renderFieldList(fields: DetectedField[]): string {
 }
 
 function render(): void {
+  const approvedCount = getApprovedCount();
+
   app.innerHTML = `
     <main class="popup-shell">
       <header class="hero">
@@ -179,7 +327,7 @@ function render(): void {
       <section class="panel actions-panel" aria-labelledby="actions-heading">
         <div class="panel-heading">
           <h2 id="actions-heading">Actions</h2>
-          <span class="status-pill">Steps 4-5 next</span>
+          <span class="status-pill">Step 7 wired</span>
         </div>
 
         <div class="status-banner status-${state.statusTone}">
@@ -191,20 +339,27 @@ function render(): void {
             type="button"
             class="primary-action"
             data-action="scan"
-            ${state.isScanning || state.isInitializing ? "disabled" : ""}
+            ${state.isScanning || state.isInitializing || state.isSuggesting ? "disabled" : ""}
           >
             ${state.isScanning ? "Scanning..." : "Scan page"}
           </button>
-          <button type="button" class="secondary-action" disabled>
-            Suggest values
+          <button
+            type="button"
+            class="secondary-action"
+            data-action="suggest"
+            ${canRequestSuggestions() ? "" : "disabled"}
+          >
+            ${state.isSuggesting ? "Requesting suggestions..." : "Suggest values"}
           </button>
           <button type="button" class="secondary-action" disabled>
-            Fill approved fields
+            Fill approved fields (${approvedCount})
           </button>
         </div>
 
         <p class="panel-note">
-          Suggestion and fill actions stay disabled until the next implementation steps.
+          ${state.lastSuggestionCount > 0
+            ? `The last suggestion request returned ${state.lastSuggestionCount} suggestion(s). ${approvedCount} field(s) are currently approved for the future fill step.`
+            : "Request suggestions first, then review each field and approve the ones you want to fill later."}
         </p>
       </section>
 
@@ -240,6 +395,18 @@ function render(): void {
         </label>
 
         <label class="field">
+          <span>API model</span>
+          <input
+            type="text"
+            name="apiModel"
+            autocomplete="off"
+            value="${escapeHtml(state.apiModel)}"
+            placeholder="gpt-4.1-mini"
+            ${state.isInitializing ? "disabled" : ""}
+          />
+        </label>
+
+        <label class="field">
           <span>API key</span>
           <input
             type="password"
@@ -269,9 +436,34 @@ function render(): void {
     void handleScan();
   });
 
+  const suggestButton = app.querySelector<HTMLButtonElement>("[data-action='suggest']");
+  suggestButton?.addEventListener("click", () => {
+    void handleSuggest();
+  });
+
+  const approvalInputs = app.querySelectorAll<HTMLInputElement>("[data-approve-field-id]");
+  for (const input of approvalInputs) {
+    input.addEventListener("change", (event) => {
+      const checkbox = event.currentTarget as HTMLInputElement;
+      const fieldId = checkbox.dataset.approveFieldId;
+      if (!fieldId) {
+        return;
+      }
+
+      state.approvedByFieldId[fieldId] = checkbox.checked;
+      render();
+    });
+  }
+
   const apiEndpointInput = app.querySelector<HTMLInputElement>("input[name='apiEndpoint']");
   apiEndpointInput?.addEventListener("input", (event) => {
     state.apiEndpoint = (event.currentTarget as HTMLInputElement).value;
+    queueSettingsSave();
+  });
+
+  const apiModelInput = app.querySelector<HTMLInputElement>("input[name='apiModel']");
+  apiModelInput?.addEventListener("input", (event) => {
+    state.apiModel = (event.currentTarget as HTMLInputElement).value;
     queueSettingsSave();
   });
 
@@ -334,6 +526,7 @@ async function initializePopup(): Promise<void> {
     const settings = await loadPopupSettings(getCurrentSettings());
     state.apiEndpoint = settings.apiEndpoint;
     state.apiKey = settings.apiKey;
+    state.apiModel = settings.apiModel;
     state.profileJson = settings.profileJson;
     state.storageMessage = "Settings loaded from local Chrome extension storage.";
     state.storageTone = "success";
@@ -357,6 +550,12 @@ async function getActiveTabId(): Promise<number> {
   return tab.id;
 }
 
+function resetSuggestionState(): void {
+  state.approvedByFieldId = {};
+  state.lastSuggestionCount = 0;
+  state.suggestionsByFieldId = {};
+}
+
 async function handleScan(): Promise<void> {
   state.isScanning = true;
   state.statusMessage = "Scanning the active page for visible form fields...";
@@ -371,15 +570,84 @@ async function handleScan(): Promise<void> {
     });
 
     state.detectedFields = result?.result ?? [];
+    resetSuggestionState();
     state.statusMessage = `Scan complete. Found ${state.detectedFields.length} visible field(s).`;
     state.statusTone = "success";
   } catch (error) {
     state.detectedFields = [];
+    resetSuggestionState();
     state.statusMessage =
       error instanceof Error ? error.message : "Scanning failed for an unknown reason.";
     state.statusTone = "error";
   } finally {
     state.isScanning = false;
+    render();
+  }
+}
+
+function validateSuggestionInputs(): string | null {
+  if (!state.apiEndpoint.trim()) {
+    return "API endpoint URL is required before requesting suggestions.";
+  }
+
+  if (!state.apiModel.trim()) {
+    return "API model is required before requesting suggestions.";
+  }
+
+  if (!state.apiKey.trim()) {
+    return "API key is required before requesting suggestions.";
+  }
+
+  if (state.detectedFields.length === 0) {
+    return "Scan the page before requesting suggestions.";
+  }
+
+  try {
+    JSON.parse(state.profileJson);
+  } catch {
+    return "User profile JSON is invalid. Fix it before requesting suggestions.";
+  }
+
+  return null;
+}
+
+async function handleSuggest(): Promise<void> {
+  const validationError = validateSuggestionInputs();
+  if (validationError) {
+    state.statusMessage = validationError;
+    state.statusTone = "error";
+    render();
+    return;
+  }
+
+  state.isSuggesting = true;
+  state.statusMessage = "Requesting structured suggestions from the configured API...";
+  state.statusTone = "neutral";
+  render();
+
+  try {
+    const result = await requestFieldSuggestions({
+      apiEndpoint: state.apiEndpoint.trim(),
+      apiKey: state.apiKey.trim(),
+      apiModel: state.apiModel.trim(),
+      detectedFields: state.detectedFields,
+      profileJson: state.profileJson
+    });
+
+    state.lastSuggestionCount = result.suggestions.length;
+    state.approvedByFieldId = {};
+    state.suggestionsByFieldId = Object.fromEntries(
+      result.suggestions.map((suggestion) => [suggestion.internalId, suggestion])
+    );
+    state.statusMessage = `Suggestion request completed. Received ${result.suggestions.length} structured suggestion(s). Review each field and approve the ones you want to fill later.`;
+    state.statusTone = "success";
+  } catch (error) {
+    state.lastSuggestionCount = 0;
+    state.statusMessage =
+      error instanceof Error ? error.message : "Suggestion request failed.";
+    state.statusTone = "error";
+  } finally {
+    state.isSuggesting = false;
     render();
   }
 }

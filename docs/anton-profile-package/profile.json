@@ -4,8 +4,10 @@
     "lastName": "Astakhov",
     "email": "av.astakhov@gmail.com",
     "phone": "+45 71 57 75 74",
+    "addressLine1": "Ramonova 3491",
+    "postalCode": "100 00",
     "city": "Prague",
-    "country": "Czech Republic",
+    "country": "Denmark",
     "linkedin": "https://www.linkedin.com/in/antonastakhov/",
     "github": "",
     "website": ""

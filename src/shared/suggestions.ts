@@ -70,8 +70,10 @@ Never invent facts.
 Treat unsupported as a last resort for ordinary non-sensitive fields.
 For ordinary non-sensitive fields, you may provide a best-effort proposal with low confidence when the profile strongly suggests a likely answer.
 Use Markdown knowledge notes to infer ordinary non-sensitive answers such as years of experience, skill depth, project evidence, and reusable narrative summaries.
+For fields asking to describe a current or past role, position, responsibilities, achievements, or key work, prefer the matching experience highlights or bullet points from the profile with minimal rewriting.
 For ordinary experience questions such as years using Python, SQL, machine learning, or similar skills, infer a reasonable estimate from dated work history, role summaries, project bullets, and skills evidence when possible.
 If the field asks for years of experience and the evidence supports an estimate, return a concise numeric answer such as "5".
+For address fields, use the structured profile JSON exactly. If a generic country field is requested, use the country value from the structured profile JSON even when the city or street address is elsewhere.
 Never answer sensitive, legal, immigration, demographic, disability, salary, notice-period, or work-authorization questions unless an exact approved answer is present in the structured profile JSON.
 Prefer concise answers.
 Do not submit anything.
@@ -118,8 +120,10 @@ export function buildSuggestionUserPayload(
         "Only answer sensitive or legal questions when the exact approved answer exists in the structured profile JSON.",
         "Treat unsupported as a last resort for ordinary non-sensitive fields when the profile contains enough evidence for a reasonable guess.",
         "Use Markdown knowledge notes for ordinary inference, project evidence, skill depth, and reusable narrative answers.",
+        "For role or position description fields, prefer copying the most relevant experience highlights or bullet points from the matching role with minimal rewriting.",
         "For ordinary non-sensitive fields, if the profile reasonably implies a likely answer, you may propose it with low confidence and explain the inference in the reason.",
         "For ordinary years-of-experience questions, estimate from dated roles and relevant skill evidence when the profile supports a reasonable guess, and prefer a short numeric string.",
+        "For address fields, use the structured profile JSON exactly. For generic country fields, use the structured country value even if the city or street address is in another country.",
         "Set manualFillRequired to true for controls that are not safe to autofill.",
         "Return one JSON object that matches the required schema exactly."
       ],
